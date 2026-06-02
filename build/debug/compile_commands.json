@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/CODING_PROJECTS/Racing/build/debug",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe   -g -std=c++17 -Wall -o CMakeFiles\\Racing.dir\\src\\main.cpp.obj -c C:\\CODING_PROJECTS\\Racing\\src\\main.cpp",
+  "file": "C:/CODING_PROJECTS/Racing/src/main.cpp",
+  "output": "CMakeFiles/Racing.dir/src/main.cpp.obj"
+},
+{
+  "directory": "C:/CODING_PROJECTS/Racing/build/debug",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe   -g -std=c++17 -Wall -o CMakeFiles\\Racing.dir\\src\\Game.cpp.obj -c C:\\CODING_PROJECTS\\Racing\\src\\Game.cpp",
+  "file": "C:/CODING_PROJECTS/Racing/src/Game.cpp",
+  "output": "CMakeFiles/Racing.dir/src/Game.cpp.obj"
+}
+]
