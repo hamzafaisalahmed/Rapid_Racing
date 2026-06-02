@@ -14,14 +14,12 @@ void Game::init()
     window.create(desktop, "Racing", sf::Style::Default);
     window.setFramerateLimit(60);
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 480.f, 720.f));
-    gameView.setViewport(sf::FloatRect(
-        (float)desktop.width,
-        0.f,
-        (float)desktop.width,
-        1.f));
+    gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
 
-    stateStack.push(GameState::Home);
+    track.LoadTrack("assets/track1.png");
+
+    stateStack.push(GameState::Playing);
 }
 
 void Game::run()
@@ -55,5 +53,5 @@ void Game::update(float dt)
 
 void Game::render()
 {
-    return;
+    track.draw(window);
 }

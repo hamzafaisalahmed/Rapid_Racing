@@ -8,7 +8,7 @@
 #include <string>
 
 #include "GameState.h"
-
+#include "Track.h"
 class Game
 {
     float dt;
@@ -17,6 +17,7 @@ class Game
     std::stack<GameState> stateStack;
     sf::RenderWindow window;
     sf::View gameView;
+    Track track;
 
 public:
     void init();

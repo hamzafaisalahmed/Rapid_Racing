@@ -276,6 +276,8 @@ CMakeFiles/Racing.dir/src/Game.cpp.obj: \
  C:/msys64/ucrt64/include/c++/15.2.0/queue \
  C:/msys64/ucrt64/include/c++/15.2.0/bits/stl_queue.h \
  C:\CODING_PROJECTS\Racing\src\GameState.h \
+ C:\CODING_PROJECTS\Racing\src\Track.h \
+ C:\CODING_PROJECTS\Racing\src\Utils.h \
  C:/msys64/ucrt64/include/c++/15.2.0/cmath \
  C:/msys64/ucrt64/include/math.h \
  C:/msys64/ucrt64/include/c++/15.2.0/bits/specfun.h \
