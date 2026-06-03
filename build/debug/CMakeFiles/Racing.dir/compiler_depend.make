@@ -300,8 +300,11 @@ CMakeFiles/Racing.dir/src/Game.cpp.obj: C:/CODING_PROJECTS/Racing/src/Game.cpp \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stddef.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h \
+  C:/CODING_PROJECTS/Racing/src/Car.h \
   C:/CODING_PROJECTS/Racing/src/Game.h \
-  C:/CODING_PROJECTS/Racing/src/GameState.h
+  C:/CODING_PROJECTS/Racing/src/GameState.h \
+  C:/CODING_PROJECTS/Racing/src/Track.h \
+  C:/CODING_PROJECTS/Racing/src/Utils.h
 
 CMakeFiles/Racing.dir/src/main.cpp.obj: C:/CODING_PROJECTS/Racing/src/main.cpp \
   C:/msys64/ucrt64/include/SFML/Audio.hpp \
@@ -586,8 +589,11 @@ CMakeFiles/Racing.dir/src/main.cpp.obj: C:/CODING_PROJECTS/Racing/src/main.cpp \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stddef.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h \
+  C:/CODING_PROJECTS/Racing/src/Car.h \
   C:/CODING_PROJECTS/Racing/src/Game.h \
-  C:/CODING_PROJECTS/Racing/src/GameState.h
+  C:/CODING_PROJECTS/Racing/src/GameState.h \
+  C:/CODING_PROJECTS/Racing/src/Track.h \
+  C:/CODING_PROJECTS/Racing/src/Utils.h
 
 
 C:/CODING_PROJECTS/Racing/src/Game.cpp:
@@ -789,6 +795,8 @@ C:/msys64/ucrt64/include/SFML/System/Vector3.hpp:
 C:/msys64/ucrt64/include/_mingw_stat64.h:
 
 C:/msys64/ucrt64/include/SFML/System/Vector3.inl:
+
+C:/CODING_PROJECTS/Racing/src/Car.h:
 
 C:/msys64/ucrt64/include/SFML/Window.hpp:
 
@@ -1146,6 +1154,8 @@ C:/msys64/ucrt64/include/limits.h:
 
 C:/msys64/ucrt64/include/locale.h:
 
+C:/CODING_PROJECTS/Racing/src/Track.h:
+
 C:/msys64/ucrt64/include/malloc.h:
 
 C:/msys64/ucrt64/include/math.h:
@@ -1191,5 +1201,7 @@ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h:
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h:
 
 C:/CODING_PROJECTS/Racing/src/Game.h:
+
+C:/CODING_PROJECTS/Racing/src/Utils.h:
 
 C:/CODING_PROJECTS/Racing/src/main.cpp:

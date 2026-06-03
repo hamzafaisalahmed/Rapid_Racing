@@ -7,8 +7,20 @@
 #include <queue>
 #include <string>
 
-#include "GameState.h"
 #include "Track.h"
+#include "Car.h"
+#include "Utils.h"
+
+enum class GameState
+{
+    Home,
+    Menu,
+    Playing,
+    Paused,
+    LevelComplete,
+    GameOver
+};
+
 class Game
 {
     float dt;
@@ -18,6 +30,8 @@ class Game
     sf::RenderWindow window;
     sf::View gameView;
     Track track;
+
+    Player player;
 
 public:
     void init();

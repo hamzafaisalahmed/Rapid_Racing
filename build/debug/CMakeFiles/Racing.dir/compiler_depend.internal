@@ -301,8 +301,11 @@ CMakeFiles/Racing.dir/src/Game.cpp.obj
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stddef.h
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h
+ C:/CODING_PROJECTS/Racing/src/Car.h
  C:/CODING_PROJECTS/Racing/src/Game.h
  C:/CODING_PROJECTS/Racing/src/GameState.h
+ C:/CODING_PROJECTS/Racing/src/Track.h
+ C:/CODING_PROJECTS/Racing/src/Utils.h
 
 CMakeFiles/Racing.dir/src/main.cpp.obj
  C:/CODING_PROJECTS/Racing/src/main.cpp
@@ -588,6 +591,9 @@ CMakeFiles/Racing.dir/src/main.cpp.obj
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stddef.h
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h
+ C:/CODING_PROJECTS/Racing/src/Car.h
  C:/CODING_PROJECTS/Racing/src/Game.h
  C:/CODING_PROJECTS/Racing/src/GameState.h
+ C:/CODING_PROJECTS/Racing/src/Track.h
+ C:/CODING_PROJECTS/Racing/src/Utils.h
 

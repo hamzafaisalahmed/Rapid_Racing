@@ -12,6 +12,8 @@ class Track
     sf::Image trackImage;
     sf::Sprite trackSprite;
 
+    float frictionFactor;
+
 public:
     void LoadTrack(const std::string &dir)
     {
@@ -35,7 +37,20 @@ public:
         }
     }
 
-    void draw(sf::RenderWindow &window) { window.draw(trackSprite); }
+    sf::Vector2u getSize() const
+    {
+        return trackTexture.getSize();
+    }
+
+    sf::Sprite &getSprite()
+    {
+        return trackSprite;
+    }
+
+    void draw(sf::RenderWindow &window, sf::VideoMode desktop)
+    {
+        window.draw(trackSprite);
+    }
     bool isOnRoad(sf::Vector2f pos)
     {
         sf::Color pixel = trackImage.getPixel((unsigned)pos.x, (unsigned)pos.y);
@@ -43,4 +58,11 @@ public:
                 pixel.g > 100 && pixel.g < 200 &&
                 pixel.b > 100 && pixel.b < 200);
     }
+
+    float getFriction()
+    {
+        return frictionFactor;
+    }
+    Track() : frictionFactor(0.5f) {}
+    ~Track() = default;
 };
