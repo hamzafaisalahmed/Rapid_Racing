@@ -27,12 +27,13 @@ void Game::init()
     // Initialize player details
     player.setAngle(0.f);
     player.setCurrSpeed(0.f);
-    player.setMaxSpeed(200.f);
-    player.setAcc(100.f);
+    player.setMaxSpeed(180.f);
+    player.setAcc(200.f);
+    player.setMaxReverseSpeed(-100.f);
 
     // Set up game view to show a reasonable portion of the track
     // View should be smaller than track to allow zooming on player
-    gameView = sf::View(sf::FloatRect(0.f, 0.f, 480.f, 720.f));
+    gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
 
@@ -60,22 +61,28 @@ void Game::run()
 
 void Game::handleEvents()
 {
-    return;
+    sf::Event event;
+    while (window.pollEvent(event))
+    {
+        if (event.type == sf::Event::Closed)
+            window.close();
+    }
 }
 
 void Game::update(float dt)
 {
     if (window.hasFocus())
     {
+        sf::Vector2f oldPosition = player.getPosition();
         float angle = player.getAngle();
         float turnFactor = 0.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
         {
-            turnFactor = -1.f;
+            turnFactor = -1.f * standardTurnFactor;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
         {
-            turnFactor = 1.f;
+            turnFactor = standardTurnFactor;
         }
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
@@ -88,14 +95,23 @@ void Game::update(float dt)
         }
         float speed = player.getCurrSpeed();
         angle += turnFactor * (speed / player.getMaxSpeed()) * dt;
-        player.setAngle(angle);
 
         speed *= track.getFriction();
-        player.setCurrSpeed(speed);
+
         sf::Vector2f position = player.getPosition();
-        position.x += std::sin(angle) * player.getCurrSpeed() * dt;
-        position.y += std::cos(angle) * player.getCurrSpeed() * dt;
-        player.setPosition(position);
+        position.x += std::cos((angle - 90.f) * (3.14159f / 180.f)) * player.getCurrSpeed() * dt;
+        position.y += std::sin((angle - 90.f) * (3.14159f / 180.f)) * player.getCurrSpeed() * dt;
+        if (checkCollisions(position))
+        {
+            player.setPosition(oldPosition);
+            speed = -10.f;
+        }
+        else
+        {
+            player.setPosition(position);
+            player.setCurrSpeed(speed);
+            player.setAngle(angle);
+        }
     }
 }
 
@@ -131,4 +147,13 @@ void Game::render()
 
     track.draw(window, sf::VideoMode::getDesktopMode());
     player.draw(window);
+}
+
+bool Game::checkCollisions(sf::Vector2f pos)
+{
+    if (!track.isOnRoad(pos))
+    {
+        return false;
+    }
+    return true;
 }

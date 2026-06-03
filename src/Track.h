@@ -27,6 +27,7 @@ public:
             {
                 trackImage = trackTexture.copyToImage();
                 trackSprite.setTexture(trackTexture);
+                trackSprite.setScale(4.f, 4.f);
                 trackSprite.setPosition(0.f, 0.f);
             }
         }
@@ -39,7 +40,7 @@ public:
 
     sf::Vector2u getSize() const
     {
-        return trackTexture.getSize();
+        return sf::Vector2u(trackTexture.getSize().x * 4.f, trackTexture.getSize().y * 4.f);
     }
 
     sf::Sprite &getSprite()
@@ -53,16 +54,24 @@ public:
     }
     bool isOnRoad(sf::Vector2f pos)
     {
-        sf::Color pixel = trackImage.getPixel((unsigned)pos.x, (unsigned)pos.y);
+        // Divide by 4.f to match the scale factor applied to the sprite
+        unsigned int x = static_cast<unsigned int>(pos.x / 4.f);
+        unsigned int y = static_cast<unsigned int>(pos.y / 4.f);
+
+        // Bounds check to avoid memory crashes
+        if (x >= trackImage.getSize().x || y >= trackImage.getSize().y)
+            return false;
+
+        sf::Color pixel = trackImage.getPixel(x, y);
         return (pixel.r > 100 && pixel.r < 200 &&
                 pixel.g > 100 && pixel.g < 200 &&
                 pixel.b > 100 && pixel.b < 200);
     }
 
-    float getFriction()
+    float getFriction() const
     {
         return frictionFactor;
     }
-    Track() : frictionFactor(0.5f) {}
+    Track() : frictionFactor(0.98f) {}
     ~Track() = default;
 };

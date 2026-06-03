@@ -302,7 +302,6 @@ CMakeFiles/Racing.dir/src/Game.cpp.obj: C:/CODING_PROJECTS/Racing/src/Game.cpp \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h \
   C:/CODING_PROJECTS/Racing/src/Car.h \
   C:/CODING_PROJECTS/Racing/src/Game.h \
-  C:/CODING_PROJECTS/Racing/src/GameState.h \
   C:/CODING_PROJECTS/Racing/src/Track.h \
   C:/CODING_PROJECTS/Racing/src/Utils.h
 
@@ -591,7 +590,6 @@ CMakeFiles/Racing.dir/src/main.cpp.obj: C:/CODING_PROJECTS/Racing/src/main.cpp \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/syslimits.h \
   C:/CODING_PROJECTS/Racing/src/Car.h \
   C:/CODING_PROJECTS/Racing/src/Game.h \
-  C:/CODING_PROJECTS/Racing/src/GameState.h \
   C:/CODING_PROJECTS/Racing/src/Track.h \
   C:/CODING_PROJECTS/Racing/src/Utils.h
 
@@ -979,8 +977,6 @@ C:/msys64/ucrt64/include/c++/15.2.0/bits/stl_construct.h:
 C:/msys64/ucrt64/include/c++/15.2.0/bits/uses_allocator.h:
 
 C:/msys64/ucrt64/include/c++/15.2.0/bits/stl_deque.h:
-
-C:/CODING_PROJECTS/Racing/src/GameState.h:
 
 C:/msys64/ucrt64/include/c++/15.2.0/debug/assertions.h:
 

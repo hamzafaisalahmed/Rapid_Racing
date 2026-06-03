@@ -33,10 +33,12 @@ class Game
 
     Player player;
 
+    const float standardTurnFactor = 500.f;
+
 public:
     void init();
     void run();
-    void checkCollisions();
+    bool checkCollisions(sf::Vector2f pos);
     void update(float dt);
     void render();
     void handleEvents();

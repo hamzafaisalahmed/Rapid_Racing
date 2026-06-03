@@ -20,10 +20,9 @@ protected:
     vector<sf::Vector2f> corners;
 
 public:
-    Car(float xp, float yp, float a, float s, float ms, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), acc(ac)
+    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac)
     {
         corners.clear();
-        maxReverseSpeed = -ms / 2.f;
     }
     void load(const std::string &dir)
     {
@@ -36,7 +35,7 @@ public:
             else
             {
                 sprite.setTexture(texture);
-                sprite.setScale(0.5f, 0.5f);
+                sprite.setScale(0.08f, 0.08f);
                 sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y / 2.f);
                 sprite.setPosition(position);
                 // corners
@@ -84,8 +83,14 @@ public:
     void setMaxSpeed(float ms) { maxSpeed = ms; }
     void setAcc(float a) { acc = a; }
     float getAcc() { return acc; }
-    void setAngle(float a) { angle = a; }
+    void setAngle(float a)
+    {
+        angle = a;
+        sprite.setRotation(angle);
+    }
     void setCurrSpeed(float s) { speed = s; }
+    void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
+    float getMaxReverseSpeed() { return maxReverseSpeed; }
     ~Car() {}
 };
 class Player : public Car
@@ -93,12 +98,12 @@ class Player : public Car
 
 public:
     ~Player() {}
-    Player(float xp, float yp, float a, float s, float ms, float ac) : Car(xp, yp, a, s, ms, ac) {}
-    Player() : Car(0.f, 0.f, 0.f, 0.f, 0.f, 0.f) {}
+    Player(float xp, float yp, float a, float s, float ms, float mrs, float ac) : Car(xp, yp, a, s, ms, mrs, ac) {}
+    Player() : Car(0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f) {}
 };
 
 class AI : public Car
 {
 public:
-    AI(float xp, float yp, float a, float s, float ms, float ac) : Car(xp, yp, a, s, ms, ac) {}
+    AI(float xp, float yp, float a, float s, float ms, float mrs, float ac) : Car(xp, yp, a, s, ms, mrs, ac) {}
 };
