@@ -15,19 +15,16 @@ void Game::init()
 
     // Load track first
     track.LoadTrack("assets/textures/track1.png");
-    sf::Vector2u trackSize = track.getSize();
-
     // Load player
     player.load("assets/textures/car1.png");
 
     // Position player at center of track
-    sf::Vector2f playerStartPos(trackSize.x / 2.f, trackSize.y / 2.f);
-    player.setPosition(playerStartPos);
+    player.setPosition(sf::Vector2f(1620.f, 2756.f));
 
     // Initialize player details
-    player.setAngle(0.f);
+    player.setAngle(90.f);
     player.setCurrSpeed(0.f);
-    player.setMaxSpeed(180.f);
+    player.setMaxSpeed(200.f);
     player.setAcc(200.f);
     player.setMaxReverseSpeed(-100.f);
 
@@ -94,7 +91,7 @@ void Game::update(float dt)
             player.decelerate(dt);
         }
         float speed = player.getCurrSpeed();
-        angle += turnFactor * (speed / player.getMaxSpeed()) * dt;
+        angle += turnFactor * player.getTurnSpeed() * dt;
 
         speed *= track.getFriction();
 
@@ -104,7 +101,8 @@ void Game::update(float dt)
         if (checkCollisions(position))
         {
             player.setPosition(oldPosition);
-            speed = -10.f;
+            player.setCurrSpeed(speed * 0.5f);
+            player.setAngle(angle);
         }
         else
         {
@@ -153,7 +151,7 @@ bool Game::checkCollisions(sf::Vector2f pos)
 {
     if (!track.isOnRoad(pos))
     {
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }

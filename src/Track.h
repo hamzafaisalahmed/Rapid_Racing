@@ -63,9 +63,12 @@ public:
             return false;
 
         sf::Color pixel = trackImage.getPixel(x, y);
-        return (pixel.r > 100 && pixel.r < 200 &&
-                pixel.g > 100 && pixel.g < 200 &&
-                pixel.b > 100 && pixel.b < 200);
+
+        if (pixel.r <= 10 && pixel.r >= 0 && pixel.g <= 10 && pixel.g >= 0 && pixel.b <= 10 && pixel.b >= 0)
+        {
+            return false; // border collision
+        }
+        return true;
     }
 
     float getFriction() const

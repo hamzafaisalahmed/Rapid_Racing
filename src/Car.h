@@ -17,12 +17,14 @@ protected:
     float maxSpeed;
     float maxReverseSpeed;
     float acc;
+    float maxTurnSpeed;
     vector<sf::Vector2f> corners;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac)
     {
         corners.clear();
+        maxTurnSpeed = ms * 0.9f;
     }
     void load(const std::string &dir)
     {
@@ -80,7 +82,11 @@ public:
     float getAngle() { return angle; }
     float getMaxSpeed() { return maxSpeed; }
     float getCurrSpeed() { return speed; }
-    void setMaxSpeed(float ms) { maxSpeed = ms; }
+    void setMaxSpeed(float ms)
+    {
+        maxSpeed = ms;
+        maxTurnSpeed = ms * 0.8f;
+    }
     void setAcc(float a) { acc = a; }
     float getAcc() { return acc; }
     void setAngle(float a)
@@ -91,6 +97,8 @@ public:
     void setCurrSpeed(float s) { speed = s; }
     void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
     float getMaxReverseSpeed() { return maxReverseSpeed; }
+    float getMaxTurnSpeed() { return maxTurnSpeed; }
+    float getTurnSpeed() { return speed / maxTurnSpeed; }
     ~Car() {}
 };
 class Player : public Car
