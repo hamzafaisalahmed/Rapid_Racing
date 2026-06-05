@@ -77,7 +77,7 @@ public:
 
     void draw(sf::RenderWindow &window) { window.draw(sprite); }
 
-    sf::Vector2f getPosition() { return position; }
+    sf::Vector2f getPosition() const { return position; }
     void setPosition(sf::Vector2f pos)
     {
         position = pos;

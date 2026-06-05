@@ -49,8 +49,9 @@ void Game::init()
 
     hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
 
-    currentLap = 1;
+    currentLap = 0;
     totalLaps = 3;
+    currentLapTime = 0.f;
     raceTimer.restart();
 
     // Set up game view to show a reasonable portion of the track
@@ -58,7 +59,6 @@ void Game::init()
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
-
     stateStack.push(GameState::Playing);
 }
 
@@ -91,7 +91,7 @@ void Game::handleEvents()
     }
 }
 
-void Game::update(float dt)
+void Game::handlePlayerMovement(float dt)
 {
     if (window.hasFocus())
     {
@@ -120,7 +120,10 @@ void Game::update(float dt)
         }
         else
         {
-            player.setCurrSpeed(player.getCurrSpeed() * track.getFriction());
+            if (player.getCurrSpeed() < 60.f && player.getCurrSpeed() > -60.f)
+                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction() * 0.98f);
+            else
+                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction());
         }
 
         float speed = player.getCurrSpeed();
@@ -138,6 +141,20 @@ void Game::update(float dt)
             player.setPosition(position);
             player.setCurrSpeed(speed);
             player.setAngle(lerp(oldAngle, angle, 0.6f));
+        }
+    }
+}
+
+void Game::update(float dt)
+{
+    handlePlayerMovement(dt);
+    currentLapTime += dt;
+    if (track.isFinishLine(player.getCorners(player.getPosition(), player.getAngle()), dt))
+    {
+        currentLap++;
+        if (currentLap > totalLaps)
+        {
+            stateStack.push(GameState::LevelComplete);
         }
     }
 }

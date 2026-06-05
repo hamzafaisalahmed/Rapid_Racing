@@ -44,6 +44,7 @@ class Game
     sf::Clock raceTimer;
     int currentLap;
     int totalLaps;
+    float currentLapTime;
 
 public:
     void init();
@@ -52,6 +53,7 @@ public:
     void update(float dt);
     void render();
     void handleEvents();
+    void handlePlayerMovement(float dt);
 
     void renderHUD();
     Game() : dt(0.0f), score(0) {}
