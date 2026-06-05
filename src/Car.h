@@ -36,7 +36,7 @@ public:
             {
                 sprite.setTexture(texture);
                 sprite.setScale(0.08f, 0.08f);
-                sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y / 2.f);
+                sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y * 0.65f);
                 sprite.setPosition(position);
             }
         }
@@ -56,9 +56,10 @@ public:
 
         sf::FloatRect bounds = sprite.getLocalBounds();
         float w = (bounds.width * sprite.getScale().x) / 2.f;
-        float h = (bounds.height * sprite.getScale().y) / 2.f;
+        float hf = (bounds.height * sprite.getScale().y) * 0.65f;
+        float hr = (bounds.height * sprite.getScale().y) - hf;
         return {
-            t.transformPoint(-w, h), t.transformPoint(w, h), t.transformPoint(w, -h), t.transformPoint(-w, -h)};
+            t.transformPoint(-w, hf), t.transformPoint(w, hf), t.transformPoint(w, -hr), t.transformPoint(-w, -hr)};
     }
     void accelerate(float dt)
     {
@@ -69,7 +70,7 @@ public:
 
     void decelerate(float dt)
     {
-        speed -= acc * dt;
+        speed -= acc * 2 * dt;
         if (speed < maxReverseSpeed)
             speed = maxReverseSpeed;
     }
@@ -102,7 +103,13 @@ public:
     void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
     float getMaxReverseSpeed() { return maxReverseSpeed; }
     float getMaxTurnSpeed() { return maxTurnSpeed; }
-    float getTurnSpeed() { return speed / maxTurnSpeed; }
+    float getTurnSpeed()
+    {
+        float ratio = 1 - (speed / maxTurnSpeed);
+        if (ratio < 0.3)
+            return 0.3;
+        return ratio;
+    }
     ~Car() {}
 };
 class Player : public Car

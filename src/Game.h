@@ -35,6 +35,16 @@ class Game
 
     const float standardTurnFactor = 500.f;
 
+    sf::Font font;
+    sf::Text timerText;
+    sf::Text lapText;
+    sf::Text speedometer;
+    sf::View hudView;
+
+    sf::Clock raceTimer;
+    int currentLap;
+    int totalLaps;
+
 public:
     void init();
     void run();
@@ -43,6 +53,7 @@ public:
     void render();
     void handleEvents();
 
+    void renderHUD();
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };

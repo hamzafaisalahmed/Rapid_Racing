@@ -71,6 +71,6 @@ public:
     {
         return frictionFactor;
     }
-    Track() : frictionFactor(0.98f) {}
+    Track() : frictionFactor(0.998f) {}
     ~Track() = default;
 };
