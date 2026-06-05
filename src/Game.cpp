@@ -19,7 +19,7 @@ void Game::init()
     player.load("assets/textures/car1.png");
 
     // Position player at center of track
-    player.setPosition(sf::Vector2f(1620.f, 2756.f));
+    player.setPosition(sf::Vector2f(1620.f, 2800.f));
 
     // Initialize player details
     player.setAngle(90.f);
@@ -72,6 +72,7 @@ void Game::update(float dt)
     {
         sf::Vector2f oldPosition = player.getPosition();
         float angle = player.getAngle();
+        float oldAngle = angle;
         float turnFactor = 0.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
         {
@@ -98,11 +99,11 @@ void Game::update(float dt)
         sf::Vector2f position = player.getPosition();
         position.x += std::cos((angle - 90.f) * (3.14159f / 180.f)) * player.getCurrSpeed() * dt;
         position.y += std::sin((angle - 90.f) * (3.14159f / 180.f)) * player.getCurrSpeed() * dt;
-        if (checkCollisions(position))
+        if (checkCollisions(position, angle))
         {
             player.setPosition(oldPosition);
-            player.setCurrSpeed(speed * 0.5f);
-            player.setAngle(angle);
+            player.setCurrSpeed(speed * -0.5f);
+            player.setAngle(oldAngle);
         }
         else
         {
@@ -147,11 +148,13 @@ void Game::render()
     player.draw(window);
 }
 
-bool Game::checkCollisions(sf::Vector2f pos)
+bool Game::checkCollisions(sf::Vector2f pos, float angle)
 {
-    if (!track.isOnRoad(pos))
-    {
-        return true;
-    }
+    for (auto &corner : player.getCorners(pos, angle))
+        if (!track.isOnRoad(corner))
+        {
+            return true;
+        }
+
     return false;
 }

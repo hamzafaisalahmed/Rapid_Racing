@@ -18,12 +18,10 @@ protected:
     float maxReverseSpeed;
     float acc;
     float maxTurnSpeed;
-    vector<sf::Vector2f> corners;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac)
     {
-        corners.clear();
         maxTurnSpeed = ms * 0.9f;
     }
     void load(const std::string &dir)
@@ -40,13 +38,6 @@ public:
                 sprite.setScale(0.08f, 0.08f);
                 sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y / 2.f);
                 sprite.setPosition(position);
-                // corners
-                sf::Transform t = sprite.getTransform();
-                corners.clear();
-                corners.push_back(t.transformPoint(0.f, 0.f));
-                corners.push_back(t.transformPoint(texture.getSize().x, 0.f));
-                corners.push_back(t.transformPoint(texture.getSize().x, texture.getSize().y));
-                corners.push_back(t.transformPoint(0.f, texture.getSize().y));
             }
         }
         catch (const std::runtime_error &e)
@@ -56,6 +47,19 @@ public:
         }
     }
 
+    vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle)
+    {
+        // corners
+        sf::Transform t;
+        t.translate(pos);
+        t.rotate(angle);
+
+        sf::FloatRect bounds = sprite.getLocalBounds();
+        float w = (bounds.width * sprite.getScale().x) / 2.f;
+        float h = (bounds.height * sprite.getScale().y) / 2.f;
+        return {
+            t.transformPoint(-w, h), t.transformPoint(w, h), t.transformPoint(w, -h), t.transformPoint(-w, -h)};
+    }
     void accelerate(float dt)
     {
         speed += acc * dt;

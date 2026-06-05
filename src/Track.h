@@ -60,7 +60,7 @@ public:
 
         sf::Color pixel = trackImage.getPixel((unsigned int)pos.x, (unsigned int)pos.y);
 
-        if (pixel.r <= 10 && pixel.r >= 0 && pixel.g <= 10 && pixel.g >= 0 && pixel.b <= 10 && pixel.b >= 0)
+        if (pixel.r <= 2 && pixel.r >= 0 && pixel.g <= 2 && pixel.g >= 0 && pixel.b <= 2 && pixel.b >= 0)
         {
             return false; // border collision
         }
