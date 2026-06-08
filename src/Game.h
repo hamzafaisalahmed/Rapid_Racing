@@ -41,6 +41,9 @@ class Game
     sf::Text speedometer;
     sf::View hudView;
 
+    sf::Sprite homeBackground;
+    sf::Texture homeTexture;
+
     sf::Clock raceTimer;
     int currentLap;
     int totalLaps;
@@ -55,7 +58,12 @@ public:
     void handleEvents();
     void handlePlayerMovement(float dt);
 
+    void renderHomeScreen();
+    void renderGameOver();
+    void renderLevelComplete();
+    void renderLevelSelect();
     void renderHUD();
+    void Game::drawTextCentered(const std::string &str, float y, int size, sf::Color col);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };

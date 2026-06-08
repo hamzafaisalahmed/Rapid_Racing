@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Utils.h"
+#include "Graphics.h"
 #include <algorithm>
 #include <cmath>
 #include <SFML/Graphics.hpp>
@@ -14,11 +15,12 @@ void Game::init()
     window.create(sf::VideoMode(1200, 800), "Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
-    // Load track first
     track.LoadTrack("assets/textures/track1.png");
-    // Load player
     player.load("assets/textures/car1.png");
 
+    if (!homeTexture.loadFromFile("assets/textures/homescreen.png"))
+        throw std::runtime_error("Home background texture not found");
+    homeBackground.setTexture(homeTexture);
     // Position player at center of track
     player.setPosition(sf::Vector2f(1620.f, 2800.f));
 
@@ -59,7 +61,7 @@ void Game::init()
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
-    stateStack.push(GameState::Playing);
+    stateStack.push(GameState::Home);
 }
 
 void Game::run()
@@ -88,6 +90,13 @@ void Game::handleEvents()
     {
         if (event.type == sf::Event::Closed)
             window.close();
+        if (event.type == sf::Event::MouseButtonPressed)
+        {
+            if (stateStack.top() == GameState::Home)
+            {
+                return;
+            }
+        }
     }
 }
 
@@ -162,63 +171,45 @@ void Game::update(float dt)
 void Game::render()
 {
     window.clear(sf::Color::Black);
+    if (stateStack.top() == GameState::Home)
+    {
+        renderHomeScreen();
+        return;
+    }
+    if (stateStack.top() == GameState::Playing)
+    {
+        // Get track dimensions
+        sf::Vector2u trackSize = track.getSize();
 
-    // Get track dimensions
-    sf::Vector2u trackSize = track.getSize();
+        // Get player position
+        sf::Vector2f playerPos = player.getPosition();
 
-    // Get player position
-    sf::Vector2f playerPos = player.getPosition();
+        // Center view on player, constrained within track bounds
+        sf::Vector2f viewCenter = playerPos;
 
-    // Center view on player, constrained within track bounds
-    sf::Vector2f viewCenter = playerPos;
+        // Constrain view to not go out of track bounds
+        float viewWidth = gameView.getSize().x;
+        float viewHeight = gameView.getSize().y;
 
-    // Constrain view to not go out of track bounds
-    float viewWidth = gameView.getSize().x;
-    float viewHeight = gameView.getSize().y;
+        // Keep view centered on player, but within track bounds
+        if (viewCenter.x - viewWidth / 2.f < 0.f)
+            viewCenter.x = viewWidth / 2.f;
+        if (viewCenter.x + viewWidth / 2.f > trackSize.x)
+            viewCenter.x = trackSize.x - viewWidth / 2.f;
+        if (viewCenter.y - viewHeight / 2.f < 0.f)
+            viewCenter.y = viewHeight / 2.f;
+        if (viewCenter.y + viewHeight / 2.f > trackSize.y)
+            viewCenter.y = trackSize.y - viewHeight / 2.f;
 
-    // Keep view centered on player, but within track bounds
-    if (viewCenter.x - viewWidth / 2.f < 0.f)
-        viewCenter.x = viewWidth / 2.f;
-    if (viewCenter.x + viewWidth / 2.f > trackSize.x)
-        viewCenter.x = trackSize.x - viewWidth / 2.f;
-    if (viewCenter.y - viewHeight / 2.f < 0.f)
-        viewCenter.y = viewHeight / 2.f;
-    if (viewCenter.y + viewHeight / 2.f > trackSize.y)
-        viewCenter.y = trackSize.y - viewHeight / 2.f;
+        gameView.setCenter(viewCenter);
+        window.setView(gameView);
 
-    gameView.setCenter(viewCenter);
-    window.setView(gameView);
-
-    track.draw(window, sf::VideoMode::getDesktopMode());
-    player.draw(window);
-    renderHUD();
+        track.draw(window, sf::VideoMode::getDesktopMode());
+        player.draw(window);
+        renderHUD();
+    }
 }
 
-void Game::renderHUD()
-{
-    // switch to HUD view so text stays fixed on screen
-    window.setView(hudView);
-
-    float elapsed = raceTimer.getElapsedTime().asSeconds();
-    int minutes = (int)(elapsed / 60.f);
-    int seconds = (int)(elapsed) % 60;
-    int millis = (int)((elapsed - (int)elapsed) * 100);
-
-    timerText.setString("Time: " + std::to_string(minutes) + ":" +
-                        (seconds < 10 ? "0" : "") + std::to_string(seconds) + "." +
-                        (millis < 10 ? "0" : "") + std::to_string(millis));
-
-    lapText.setString("Lap: " + std::to_string(currentLap) + "/" + std::to_string(totalLaps));
-
-    window.draw(timerText);
-    window.draw(lapText);
-
-    int displaySpeed = (int)(std::abs(player.getCurrSpeed()));
-    speedometer.setString("Speed: " + std::to_string(displaySpeed) + " km/h");
-    window.draw(speedometer);
-    // switch back to game view
-    window.setView(gameView);
-}
 bool Game::checkCollisions(sf::Vector2f pos, float angle)
 {
     for (auto &corner : player.getCorners(pos, angle))
