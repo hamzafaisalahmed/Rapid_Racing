@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ctime>
 #include <stdexcept>
+#include <fstream>
 
 void Game::init()
 {
@@ -18,16 +19,6 @@ void Game::init()
     track.LoadTrack("assets/textures/track1.png");
     // Load player
     player.load("assets/textures/car1.png");
-
-    // Position player at center of track
-    player.setPosition(sf::Vector2f(1620.f, 2800.f));
-
-    // Initialize player details
-    player.setAngle(90.f);
-    player.setCurrSpeed(0.f);
-    player.setMaxSpeed(300.f);
-    player.setAcc(50.f);
-    player.setMaxReverseSpeed(-100.f);
 
     if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
         throw std::runtime_error("Font not found");
@@ -47,12 +38,9 @@ void Game::init()
     speedometer.setFillColor(sf::Color::White);
     speedometer.setPosition(10.f, 700.f);
 
-    hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
+    resetLevel();
 
-    currentLap = 0;
-    totalLaps = 3;
-    currentLapTime = 0.f;
-    raceTimer.restart();
+    hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
 
     // Set up game view to show a reasonable portion of the track
     // View should be smaller than track to allow zooming on player
@@ -87,10 +75,51 @@ void Game::handleEvents()
     while (window.pollEvent(event))
     {
         if (event.type == sf::Event::Closed)
+        {
+            if (lapData.laps == totalLaps)
+                saveLapTime(lapData);
             window.close();
+        }
+        if (event.type == sf::Event::MouseButtonPressed)
+        {
+            sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+            if (stateStack.top() == GameState::LevelComplete)
+            {
+                if (levelCompleteButtons[0].contains(mousePos))
+                {
+                    // Restart
+                    saveLapTime(lapData);
+                    lapData = LapTime();
+                    resetLevel();
+                    stateStack.pop();
+                }
+                else if (levelCompleteButtons[1].contains(mousePos))
+                {
+                    // Exit
+                    saveLapTime(lapData);
+                    window.close();
+                }
+            }
+        }
     }
 }
 
+void Game::resetLevel()
+{
+    player.setPosition(sf::Vector2f(1620.f, 2550.f));
+    player.setAngle(90.f);
+    player.setCurrSpeed(0.f);
+    player.setMaxSpeed(300.f);
+    player.setAcc(50.f);
+    player.setMaxReverseSpeed(-100.f);
+
+    currentLap = 0;
+    totalLaps = 2;
+    currentLapTime = 0.f;
+    track.resetCooldown();
+    raceTimer.restart();
+}
 void Game::handlePlayerMovement(float dt)
 {
     if (window.hasFocus())
@@ -120,8 +149,10 @@ void Game::handlePlayerMovement(float dt)
         }
         else
         {
-            if (player.getCurrSpeed() < 60.f && player.getCurrSpeed() > -60.f)
-                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction() * 0.98f);
+            if (std::abs(player.getCurrSpeed()) < 10.f)
+                player.setCurrSpeed(0.f);
+            else if (std::abs(player.getCurrSpeed()) < 60.f)
+                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction() * 0.985f);
             else
                 player.setCurrSpeed(player.getCurrSpeed() * track.getFriction());
         }
@@ -147,22 +178,48 @@ void Game::handlePlayerMovement(float dt)
 
 void Game::update(float dt)
 {
-    handlePlayerMovement(dt);
-    currentLapTime += dt;
-    if (track.isFinishLine(player.getCorners(player.getPosition(), player.getAngle()), dt))
+    if (stateStack.top() == GameState::Playing)
     {
-        currentLap++;
-        if (currentLap > totalLaps)
+        handlePlayerMovement(dt);
+        currentLapTime += dt;
+        if (track.isFinishLine(player.getCorners(player.getPosition(), player.getAngle()), dt))
         {
-            stateStack.push(GameState::LevelComplete);
+            currentLap++;
+            if (currentLap > 1)
+            {
+                lapData.totalTime += currentLapTime;
+                if (currentLapTime < lapData.bestLap)
+                    lapData.bestLap = currentLapTime;
+                currentLapTime = 0.0f;
+                lapData.laps++;
+            }
+
+            if (currentLap > totalLaps)
+            {
+                stateStack.push(GameState::LevelComplete);
+            }
         }
+    }
+    if (stateStack.top() == GameState::LevelComplete)
+    {
     }
 }
 
 void Game::render()
 {
     window.clear(sf::Color::Black);
+    if (stateStack.top() == GameState::Playing)
+    {
+        renderGamePlay();
+    }
+    else if (stateStack.top() == GameState::LevelComplete)
+    {
+        renderLevelComplete();
+    }
+}
 
+void Game::renderGamePlay()
+{
     // Get track dimensions
     sf::Vector2u trackSize = track.getSize();
 
@@ -228,4 +285,102 @@ bool Game::checkCollisions(sf::Vector2f pos, float angle)
         }
 
     return false;
+}
+
+void Game::saveLapTime(const LapTime &lt)
+{
+    std::ofstream file("scores.txt", std::ios::app);
+    if (file.is_open())
+    {
+        file << lt.id << " " << lt.laps << " "
+             << lt.bestLap << " " << lt.totalTime << "\n";
+        file.close();
+    }
+}
+
+std::vector<LapTime> Game::loadLapTimes()
+{
+    std::vector<LapTime> times;
+    std::ifstream file("scores.txt");
+    if (file.is_open())
+    {
+        LapTime lt;
+        while (file >> lt.id >> lt.laps >> lt.bestLap >> lt.totalTime)
+            times.push_back(lt);
+        file.close();
+    }
+    return times;
+}
+
+void Game::renderLevelComplete()
+{
+    window.setView(window.getDefaultView());
+    window.clear(sf::Color::Black);
+
+    sf::Text title;
+    drawTextCentered("RACE COMPLETE!", 600.f, 60.f, 50, sf::Color::White);
+
+    float fastest = lapData.bestLap;
+    int mins = (int)(fastest / 60.f);
+    int secs = (int)fastest % 60;
+    int ms = (int)((fastest - (int)fastest) * 1000);
+
+    std::string lapTime = "Your ID: " + std::to_string(lapData.id) + " | Best Lap: " + std::to_string(mins) + ":" +
+                          (secs < 10 ? "0" : "") + std::to_string(secs) + "." +
+                          (ms < 100 ? "0" : "") + (ms < 10 ? "0" : "") + std::to_string(ms);
+    drawTextCentered(lapTime, 600.f, 150.f, 30, sf::Color::White);
+
+    // Global top 3
+    std::vector<LapTime> allTimes = loadLapTimes();
+    std::sort(allTimes.begin(), allTimes.end(),
+              [](const LapTime &a, const LapTime &b)
+              { return a.bestLap < b.bestLap; });
+
+    std::string text = "GLOBAL TOP 3:\n\n";
+    for (int i = 0; i < std::min(3, (int)allTimes.size()); i++)
+    {
+        float time = allTimes[i].bestLap;
+        int m = (int)(time / 60.f);
+        int s = (int)(time) % 60;
+        int milli = (int)((time - (int)time) * 1000);
+
+        text += std::to_string(i + 1) + ". ID:" + std::to_string(allTimes[i].id) + " | " +
+                std::to_string(m) + ":" +
+                (s < 10 ? "0" : "") + std::to_string(s) + "." +
+                (milli < 100 ? "0" : "") + (milli < 10 ? "0" : "") + std::to_string(milli) + "\n\n";
+    }
+
+    drawTextCentered(text, 600.f, 300.f, 20, sf::Color::White);
+
+    // Buttons
+    std::vector<std::string>
+        buttonNames = {"RESTART", "EXIT"};
+    levelCompleteButtons.clear();
+
+    for (int i = 0; i < 2; i++)
+    {
+        float buttonX = 300.f + (i * 360.f);
+        float buttonY = 550.f;
+
+        sf::RectangleShape button(sf::Vector2f(120.f, 40.f));
+        button.setPosition(buttonX, buttonY);
+        button.setFillColor(sf::Color::White);
+        window.draw(button);
+        levelCompleteButtons.push_back(button.getGlobalBounds());
+
+        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black);
+    }
+}
+
+void Game::drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col)
+{
+    sf::Text text;
+    text.setFont(font);
+    text.setString(str);
+    text.setCharacterSize(size);
+    text.setFillColor(col);
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
+    text.setPosition(x, y);
+    window.draw(text);
 }

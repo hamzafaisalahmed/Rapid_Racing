@@ -90,7 +90,7 @@ public:
     void setMaxSpeed(float ms)
     {
         maxSpeed = ms;
-        maxTurnSpeed = ms * 0.8f;
+        maxTurnSpeed = ms * 0.9f;
     }
     void setAcc(float a) { acc = a; }
     float getAcc() { return acc; }
@@ -105,9 +105,13 @@ public:
     float getMaxTurnSpeed() { return maxTurnSpeed; }
     float getTurnSpeed()
     {
-        float ratio = 1 - (speed / maxTurnSpeed);
-        if (ratio < 0.3)
-            return 0.3;
+        if (std::abs(speed) < 1.f)
+            return 0.f;
+        float ratio = 1 - (std::abs(speed) / maxTurnSpeed);
+        if (ratio >= 0.8f)
+            return 0.8f;
+        if (ratio <= 0.3f)
+            return 0.3f;
         return ratio;
     }
     ~Car() {}

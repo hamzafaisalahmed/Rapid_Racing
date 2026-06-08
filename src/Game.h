@@ -21,6 +21,15 @@ enum class GameState
     GameOver
 };
 
+struct LapTime
+{
+    int id;
+    int laps;
+    float bestLap;
+    float totalTime;
+
+    LapTime() : id((int)std::time(0)), laps(0), bestLap(999999), totalTime(0) {}
+};
 class Game
 {
     float dt;
@@ -45,6 +54,9 @@ class Game
     int currentLap;
     int totalLaps;
     float currentLapTime;
+    LapTime lapData;
+
+    std::vector<sf::FloatRect> levelCompleteButtons;
 
 public:
     void init();
@@ -54,8 +66,14 @@ public:
     void render();
     void handleEvents();
     void handlePlayerMovement(float dt);
+    void resetLevel();
 
+    void saveLapTime(const LapTime &lt);
+    std::vector<LapTime> loadLapTimes();
+    void renderLevelComplete();
+    void renderGamePlay();
     void renderHUD();
+    void drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };

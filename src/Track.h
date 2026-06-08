@@ -92,6 +92,10 @@ public:
         }
         return false;
     }
+    void resetCooldown()
+    {
+        lapCooldown = 0.0f;
+    }
     Track() : frictionFactor(0.998f), lapCooldown(0.0f) {}
     ~Track() = default;
 };
