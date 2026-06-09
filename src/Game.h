@@ -58,6 +58,9 @@ class Game
 
     std::vector<sf::FloatRect> levelCompleteButtons;
 
+    sf::Music engineAudio;
+    sf::Music endscreen;
+
 public:
     void init();
     void run();

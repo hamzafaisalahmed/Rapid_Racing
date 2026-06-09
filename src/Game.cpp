@@ -38,6 +38,15 @@ void Game::init()
     speedometer.setFillColor(sf::Color::White);
     speedometer.setPosition(10.f, 700.f);
 
+    if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
+        throw std::runtime_error("Engine sound not found\n");
+    engineAudio.setLoop(true);
+
+    if (!endscreen.openFromFile("assets/audio/endscreen.ogg"))
+        throw std::runtime_error("Endscreen music file not found\n");
+    endscreen.setLoop(true);
+    endscreen.setVolume(70.f);
+
     resetLevel();
 
     hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
@@ -78,6 +87,8 @@ void Game::handleEvents()
         {
             if (lapData.laps == totalLaps)
                 saveLapTime(lapData);
+            engineAudio.stop();
+            endscreen.stop();
             window.close();
         }
         if (event.type == sf::Event::MouseButtonPressed)
@@ -88,7 +99,6 @@ void Game::handleEvents()
             {
                 if (levelCompleteButtons[0].contains(mousePos))
                 {
-                    // Restart
                     saveLapTime(lapData);
                     lapData = LapTime();
                     resetLevel();
@@ -96,8 +106,8 @@ void Game::handleEvents()
                 }
                 else if (levelCompleteButtons[1].contains(mousePos))
                 {
-                    // Exit
                     saveLapTime(lapData);
+                    endscreen.stop();
                     window.close();
                 }
             }
@@ -119,6 +129,9 @@ void Game::resetLevel()
     currentLapTime = 0.f;
     track.resetCooldown();
     raceTimer.restart();
+    endscreen.stop();
+    engineAudio.setVolume(0.f);
+    engineAudio.play();
 }
 void Game::handlePlayerMovement(float dt)
 {
@@ -128,7 +141,7 @@ void Game::handlePlayerMovement(float dt)
         float angle = player.getAngle();
         float oldAngle = angle;
         float turnFactor = 0.f;
-
+        bool dec = false;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
         {
             turnFactor = -1.f * standardTurnFactor;
@@ -146,9 +159,11 @@ void Game::handlePlayerMovement(float dt)
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
         {
             player.decelerate(dt);
+            dec = true;
         }
         else
         {
+            dec = true;
             if (std::abs(player.getCurrSpeed()) < 10.f)
                 player.setCurrSpeed(0.f);
             else if (std::abs(player.getCurrSpeed()) < 60.f)
@@ -173,6 +188,12 @@ void Game::handlePlayerMovement(float dt)
             player.setCurrSpeed(speed);
             player.setAngle(lerp(oldAngle, angle, 0.6f));
         }
+        float targetVolume = 0;
+        if (dec)
+            targetVolume = 0;
+        else
+            targetVolume = std::abs(player.getCurrSpeed() / player.getMaxSpeed()) * 100.f;
+        engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
     }
 }
 
@@ -196,6 +217,8 @@ void Game::update(float dt)
 
             if (currentLap > totalLaps)
             {
+                engineAudio.pause();
+                endscreen.play();
                 stateStack.push(GameState::LevelComplete);
             }
         }
