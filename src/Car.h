@@ -49,7 +49,6 @@ public:
 
     vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle)
     {
-        // corners
         sf::Transform t;
         t.translate(pos);
         t.rotate(angle);
@@ -83,7 +82,6 @@ public:
         position = pos;
         sprite.setPosition(position);
     }
-    // handle friction in game
     float getAngle() { return angle; }
     float getMaxSpeed() { return maxSpeed; }
     float getCurrSpeed() { return speed; }
@@ -125,8 +123,4 @@ public:
     Player() : Car(0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f) {}
 };
 
-class AI : public Car
-{
-public:
-    AI(float xp, float yp, float a, float s, float ms, float mrs, float ac) : Car(xp, yp, a, s, ms, mrs, ac) {}
-};
+// made Player a derived class to enable future AI cars inherit the same properties

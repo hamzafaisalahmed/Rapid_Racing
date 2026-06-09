@@ -3,8 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <stdexcept>
-#include "Utils.h"
-using namespace std;
 
 class Track
 {
@@ -54,8 +52,7 @@ public:
     }
     bool isOnRoad(sf::Vector2f pos)
     {
-
-        // Bounds check to avoid memory crashes
+        // Bounds check to avoid memory crashes, suggested by AI
         if (pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y)
             return false;
 

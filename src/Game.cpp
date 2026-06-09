@@ -1,12 +1,12 @@
 #include "Game.h"
-#include "Utils.h"
 #include <algorithm>
 #include <cmath>
-#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <ctime>
 #include <stdexcept>
 #include <fstream>
+
+float lerp(float a, float b, float t) { return a + (b - a) * t; } // linear interpolation helper
 
 void Game::init()
 {
@@ -15,9 +15,7 @@ void Game::init()
     window.create(sf::VideoMode(1200, 800), "Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
-    // Load track first
     track.LoadTrack("assets/textures/track1.png");
-    // Load player
     player.load("assets/textures/car1.png");
 
     if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
@@ -51,8 +49,6 @@ void Game::init()
 
     hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
 
-    // Set up game view to show a reasonable portion of the track
-    // View should be smaller than track to allow zooming on player
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
@@ -243,20 +239,12 @@ void Game::render()
 
 void Game::renderGamePlay()
 {
-    // Get track dimensions
-    sf::Vector2u trackSize = track.getSize();
-
-    // Get player position
+    sf::Vector2u trackSize = track.getSize(); //
     sf::Vector2f playerPos = player.getPosition();
-
-    // Center view on player, constrained within track bounds
     sf::Vector2f viewCenter = playerPos;
-
-    // Constrain view to not go out of track bounds
     float viewWidth = gameView.getSize().x;
     float viewHeight = gameView.getSize().y;
 
-    // Keep view centered on player, but within track bounds
     if (viewCenter.x - viewWidth / 2.f < 0.f)
         viewCenter.x = viewWidth / 2.f;
     if (viewCenter.x + viewWidth / 2.f > trackSize.x)
@@ -264,7 +252,7 @@ void Game::renderGamePlay()
     if (viewCenter.y - viewHeight / 2.f < 0.f)
         viewCenter.y = viewHeight / 2.f;
     if (viewCenter.y + viewHeight / 2.f > trackSize.y)
-        viewCenter.y = trackSize.y - viewHeight / 2.f;
+        viewCenter.y = trackSize.y - viewHeight / 2.f; // this part was assisted by AI
 
     gameView.setCenter(viewCenter);
     window.setView(gameView);
@@ -276,7 +264,6 @@ void Game::renderGamePlay()
 
 void Game::renderHUD()
 {
-    // switch to HUD view so text stays fixed on screen
     window.setView(hudView);
 
     float elapsed = raceTimer.getElapsedTime().asSeconds();
@@ -296,7 +283,6 @@ void Game::renderHUD()
     int displaySpeed = (int)(std::abs(player.getCurrSpeed()));
     speedometer.setString("Speed: " + std::to_string(displaySpeed) + " km/h");
     window.draw(speedometer);
-    // switch back to game view
     window.setView(gameView);
 }
 bool Game::checkCollisions(sf::Vector2f pos, float angle)
@@ -353,11 +339,10 @@ void Game::renderLevelComplete()
                           (ms < 100 ? "0" : "") + (ms < 10 ? "0" : "") + std::to_string(ms);
     drawTextCentered(lapTime, 600.f, 150.f, 30, sf::Color::White);
 
-    // Global top 3
     std::vector<LapTime> allTimes = loadLapTimes();
     std::sort(allTimes.begin(), allTimes.end(),
               [](const LapTime &a, const LapTime &b)
-              { return a.bestLap < b.bestLap; });
+              { return a.bestLap < b.bestLap; }); // lambda function was learned in a different course
 
     std::string text = "GLOBAL TOP 3:\n\n";
     for (int i = 0; i < std::min(3, (int)allTimes.size()); i++)
@@ -375,7 +360,6 @@ void Game::renderLevelComplete()
 
     drawTextCentered(text, 600.f, 300.f, 20, sf::Color::White);
 
-    // Buttons
     std::vector<std::string>
         buttonNames = {"RESTART", "EXIT"};
     levelCompleteButtons.clear();
@@ -391,7 +375,7 @@ void Game::renderLevelComplete()
         window.draw(button);
         levelCompleteButtons.push_back(button.getGlobalBounds());
 
-        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black);
+        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black); // buttons also assisted by AI
     }
 }
 

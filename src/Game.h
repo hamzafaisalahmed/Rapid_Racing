@@ -1,24 +1,16 @@
 #pragma once
-#include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <stack>
 #include <vector>
-#include <queue>
 #include <string>
-
 #include "Track.h"
 #include "Car.h"
-#include "Utils.h"
 
 enum class GameState
 {
-    Home,
-    Menu,
     Playing,
-    Paused,
     LevelComplete,
-    GameOver
 };
 
 struct LapTime
