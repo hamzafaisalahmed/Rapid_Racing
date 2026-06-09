@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(SpaceShooter LANGUAGES CXX)
+project(Rapid_Racing LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,12 +15,12 @@ find_package(SFML 2.6 COMPONENTS graphics window system audio REQUIRED)
 # ============================================================
 # GAME EXECUTABLE
 # ============================================================
-add_executable(Racing
+add_executable(Rapid_Racing
     src/main.cpp
     src/Game.cpp
 )
 
-target_link_libraries(Racing
+target_link_libraries(Rapid_Racing
     PRIVATE
         sfml-graphics
         sfml-window
@@ -31,12 +31,12 @@ target_link_libraries(Racing
         gdi32
 )
 
-target_compile_options(Racing PRIVATE -Wall)
+target_compile_options(Rapid_Racing PRIVATE -Wall)
 
 # Release: hide the console window
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(Racing PROPERTIES WIN32_EXECUTABLE TRUE)
-    target_link_options(Racing PRIVATE -mwindows)
+    set_target_properties(Rapid_Racing PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_link_options(Rapid_Racing PRIVATE -mwindows)
 endif()
 
 # ============================================================
@@ -44,9 +44,9 @@ endif()
 # ============================================================
 
 # 1. This ensures the 'assets' folder is copied every time you build
-add_custom_command(TARGET Racing POST_BUILD
+add_custom_command(TARGET Rapid_Racing POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:Racing>/assets"
+        "$<TARGET_FILE_DIR:Rapid_Racing>/assets"
     COMMENT "Updating assets in build directory..."
 )
