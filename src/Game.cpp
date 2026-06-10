@@ -239,7 +239,7 @@ void Game::render()
 
 void Game::renderGamePlay()
 {
-    sf::Vector2u trackSize = track.getSize(); //
+    sf::Vector2u trackSize = track.getSize();
     sf::Vector2f playerPos = player.getPosition();
     sf::Vector2f viewCenter = playerPos;
     float viewWidth = gameView.getSize().x;
@@ -252,7 +252,7 @@ void Game::renderGamePlay()
     if (viewCenter.y - viewHeight / 2.f < 0.f)
         viewCenter.y = viewHeight / 2.f;
     if (viewCenter.y + viewHeight / 2.f > trackSize.y)
-        viewCenter.y = trackSize.y - viewHeight / 2.f; // this part was assisted by AI
+        viewCenter.y = trackSize.y - viewHeight / 2.f;
 
     gameView.setCenter(viewCenter);
     window.setView(gameView);
@@ -342,7 +342,7 @@ void Game::renderLevelComplete()
     std::vector<LapTime> allTimes = loadLapTimes();
     std::sort(allTimes.begin(), allTimes.end(),
               [](const LapTime &a, const LapTime &b)
-              { return a.bestLap < b.bestLap; }); // lambda function was learned in a different course
+              { return a.bestLap < b.bestLap; });
 
     std::string text = "GLOBAL TOP 3:\n\n";
     for (int i = 0; i < std::min(3, (int)allTimes.size()); i++)
@@ -375,7 +375,7 @@ void Game::renderLevelComplete()
         window.draw(button);
         levelCompleteButtons.push_back(button.getGlobalBounds());
 
-        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black); // buttons also assisted by AI
+        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black);
     }
 }
 

@@ -52,7 +52,6 @@ public:
     }
     bool isOnRoad(sf::Vector2f pos)
     {
-        // Bounds check to avoid memory crashes, suggested by AI
         if (pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y)
             return false;
 
@@ -60,7 +59,7 @@ public:
 
         if (pixel.r <= 2 && pixel.r >= 0 && pixel.g <= 2 && pixel.g >= 0 && pixel.b <= 2 && pixel.b >= 0)
         {
-            return false; // border collision
+            return false;
         }
         return true;
     }
