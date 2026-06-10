@@ -13,42 +13,11 @@ void Game::init()
 {
     std::srand((unsigned)std::time(0));
 
-    window.create(sf::VideoMode(1200, 800), "Racing", sf::Style::Default);
+    window.create(sf::VideoMode(1200, 800), "Rapid Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
     track.LoadTrack("assets/textures/track1.png");
     player.load("assets/textures/car1.png");
-
-    if (!homeTexture.loadFromFile("assets/textures/homescreen.png"))
-        throw std::runtime_error("Home background texture not found");
-    homeBackground.setTexture(homeTexture);
-    // Position player at center of track
-    player.setPosition(sf::Vector2f(1620.f, 2800.f));
-
-    // Initialize player details
-    player.setAngle(90.f);
-    player.setCurrSpeed(0.f);
-    player.setMaxSpeed(300.f);
-    player.setAcc(50.f);
-    player.setMaxReverseSpeed(-100.f);
-
-    if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
-        throw std::runtime_error("Font not found");
-
-    timerText.setFont(font);
-    timerText.setCharacterSize(16);
-    timerText.setFillColor(sf::Color::White);
-    timerText.setPosition(10.f, 10.f);
-
-    lapText.setFont(font);
-    lapText.setCharacterSize(20);
-    lapText.setFillColor(sf::Color::Red);
-    lapText.setPosition(10.f, 30.f);
-
-    speedometer.setFont(font);
-    speedometer.setCharacterSize(35);
-    speedometer.setFillColor(sf::Color::White);
-    speedometer.setPosition(10.f, 700.f);
 
     if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
         throw std::runtime_error("Engine sound not found\n");
@@ -68,6 +37,8 @@ void Game::init()
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
+    graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player);
+    graphics->init();
     stateStack.push(GameState::Home);
 }
 
@@ -102,38 +73,94 @@ void Game::handleEvents()
             engineAudio.stop();
             endscreen.stop();
             window.close();
-            if (event.type == sf::Event::MouseButtonPressed)
+        }
+        else if (event.type == sf::Event::MouseButtonPressed)
+        {
+            sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window), hudView);
+            if (stateStack.top() == GameState::Home)
             {
-                if (stateStack.top() == GameState::Home)
+                if (event.mouseButton.button == sf::Mouse::Left)
                 {
-                    return;
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+                    std::vector<sf::FloatRect> hb = graphics->getHomeButtons();
+
+                    for (size_t i = 0; i < hb.size(); ++i)
+                    {
+                        if (hb[i].contains(mappedMousePos))
+                        {
+                            if (i == 0)
+                                stateStack.push(GameState::Playing);
+                            // else if (i == 1)
+                            //     stateStack.push(GameState::Multiplayer);
+                            // else if (i == 2)
+                            //     stateStack.push(GameState::Leaderboard);
+                            // else if (i == 3)
+                            //     stateStack.push(GameState::Settings);
+
+                            break; // Exit loop once button action triggers
+                        }
+                    }
+                }
+            }
+            else if (stateStack.top() == GameState::LevelComplete)
+            {
+                std::vector<sf::FloatRect> levelCompleteButtons = graphics->getLevelCompleteButtons();
+                if (levelCompleteButtons[0].contains(mousePos))
+                {
+                    saveLapTime(lapData);
+                    lapData = LapTime();
+                    resetLevel();
+                    stateStack.pop();
+                }
+                else if (levelCompleteButtons[1].contains(mousePos))
+                {
+                    saveLapTime(lapData);
+                    endscreen.stop();
+                    window.close();
+                }
+            }
+            else if (stateStack.top() == GameState::Paused)
+            {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+                const auto &pauseScreenButtons = graphics->getPauseScreenButtons();
+
+                // 1. Check CONTINUE Button (Index 0)
+                if (pauseScreenButtons[0].contains(mappedMousePos))
+                {
+                    stateStack.pop(); // Remove Pause state, resumes playing
+                    engineAudio.play();
+                }
+                // 2. Check EXIT TO MENU Button (Index 1)
+                else if (pauseScreenButtons[1].contains(mappedMousePos))
+                {
+                    resetLevel();
+                    // Unwind the stack back down to the Home Screen
+                    while (stateStack.size() > 1)
+                    {
+                        stateStack.pop();
+                    }
+                    stateStack.push(GameState::Home);
+                    engineAudio.stop();
+                }
+            }
+            else if (stateStack.top() == GameState::Playing)
+            {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+                // Check if player clicked the top-right HUD pause icon
+                if (graphics->getPauseButton().contains(mappedMousePos))
+                {
+                    stateStack.push(GameState::Paused);
+                    engineAudio.pause();
                 }
             }
         }
     }
-}
-if (event.type == sf::Event::MouseButtonPressed)
-{
-    sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-
-    if (stateStack.top() == GameState::LevelComplete)
-    {
-        if (levelCompleteButtons[0].contains(mousePos))
-        {
-            saveLapTime(lapData);
-            lapData = LapTime();
-            resetLevel();
-            stateStack.pop();
-        }
-        else if (levelCompleteButtons[1].contains(mousePos))
-        {
-            saveLapTime(lapData);
-            endscreen.stop();
-            window.close();
-        }
-    }
-}
-}
 }
 
 void Game::resetLevel()
@@ -153,6 +180,7 @@ void Game::resetLevel()
     endscreen.stop();
     engineAudio.setVolume(0.f);
     engineAudio.play();
+    totalRaceTime = 0.f;
 }
 void Game::handlePlayerMovement(float dt)
 {
@@ -223,6 +251,7 @@ void Game::update(float dt)
     if (stateStack.top() == GameState::Playing)
     {
         handlePlayerMovement(dt);
+        totalRaceTime += dt;
         currentLapTime += dt;
         if (track.isFinishLine(player.getCorners(player.getPosition(), player.getAngle()), dt))
         {
@@ -244,56 +273,6 @@ void Game::update(float dt)
             }
         }
     }
-    if (stateStack.top() == GameState::LevelComplete)
-    {
-    }
-}
-
-void Game::render()
-{
-    window.clear(sf::Color::Black);
-    if (stateStack.top() == GameState::Playing)
-    {
-        renderGamePlay();
-    }
-    else if (stateStack.top() == GameState::LevelComplete)
-    {
-        renderLevelComplete();
-    }
-}
-
-void Game::renderGamePlay()
-{
-    // Get track dimensions
-    sf::Vector2u trackSize = track.getSize();
-
-    // Get player position
-    sf::Vector2f playerPos = player.getPosition();
-
-    // Center view on player, constrained within track bounds
-    sf::Vector2f viewCenter = playerPos;
-
-    // Constrain view to not go out of track bounds
-    float viewWidth = gameView.getSize().x;
-    float viewHeight = gameView.getSize().y;
-
-    // Keep view centered on player, but within track bounds
-    if (viewCenter.x - viewWidth / 2.f < 0.f)
-        viewCenter.x = viewWidth / 2.f;
-    if (viewCenter.x + viewWidth / 2.f > trackSize.x)
-        viewCenter.x = trackSize.x - viewWidth / 2.f;
-    if (viewCenter.y - viewHeight / 2.f < 0.f)
-        viewCenter.y = viewHeight / 2.f;
-    if (viewCenter.y + viewHeight / 2.f > trackSize.y)
-        viewCenter.y = trackSize.y - viewHeight / 2.f;
-
-    gameView.setCenter(viewCenter);
-    window.setView(gameView);
-
-    track.draw(window, sf::VideoMode::getDesktopMode());
-    player.draw(window);
-    renderHUD();
-}
 }
 
 bool Game::checkCollisions(sf::Vector2f pos, float angle)
@@ -332,75 +311,24 @@ std::vector<LapTime> Game::loadLapTimes()
     return times;
 }
 
-void Game::renderLevelComplete()
+void Game::render()
 {
-    window.setView(window.getDefaultView());
     window.clear(sf::Color::Black);
-
-    sf::Text title;
-    drawTextCentered("RACE COMPLETE!", 600.f, 60.f, 50, sf::Color::White);
-
-    float fastest = lapData.bestLap;
-    int mins = (int)(fastest / 60.f);
-    int secs = (int)fastest % 60;
-    int ms = (int)((fastest - (int)fastest) * 1000);
-
-    std::string lapTime = "Your ID: " + std::to_string(lapData.id) + " | Best Lap: " + std::to_string(mins) + ":" +
-                          (secs < 10 ? "0" : "") + std::to_string(secs) + "." +
-                          (ms < 100 ? "0" : "") + (ms < 10 ? "0" : "") + std::to_string(ms);
-    drawTextCentered(lapTime, 600.f, 150.f, 30, sf::Color::White);
-
-    // Global top 3
-    std::vector<LapTime> allTimes = loadLapTimes();
-    std::sort(allTimes.begin(), allTimes.end(),
-              [](const LapTime &a, const LapTime &b)
-              { return a.bestLap < b.bestLap; });
-
-    std::string text = "GLOBAL TOP 3:\n\n";
-    for (int i = 0; i < std::min(3, (int)allTimes.size()); i++)
+    if (stateStack.top() == GameState::Home)
     {
-        float time = allTimes[i].bestLap;
-        int m = (int)(time / 60.f);
-        int s = (int)(time) % 60;
-        int milli = (int)((time - (int)time) * 1000);
-
-        text += std::to_string(i + 1) + ". ID:" + std::to_string(allTimes[i].id) + " | " +
-                std::to_string(m) + ":" +
-                (s < 10 ? "0" : "") + std::to_string(s) + "." +
-                (milli < 100 ? "0" : "") + (milli < 10 ? "0" : "") + std::to_string(milli) + "\n\n";
+        graphics->renderHomeScreen();
     }
-
-    drawTextCentered(text, 600.f, 300.f, 20, sf::Color::White);
-
-    // Buttons
-    std::vector<std::string>
-        buttonNames = {"RESTART", "EXIT"};
-    levelCompleteButtons.clear();
-
-    for (int i = 0; i < 2; i++)
+    else if (stateStack.top() == GameState::Playing)
     {
-        float buttonX = 300.f + (i * 360.f);
-        float buttonY = 550.f;
-
-        sf::RectangleShape button(sf::Vector2f(120.f, 40.f));
-        button.setPosition(buttonX, buttonY);
-        button.setFillColor(sf::Color::White);
-        window.draw(button);
-        levelCompleteButtons.push_back(button.getGlobalBounds());
-
-        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black);
+        graphics->renderGamePlay();
+        graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);
     }
-}
-
-void Game::drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col)
-{
-    sf::Text text;
-    text.setFont(font);
-    text.setString(str);
-    text.setCharacterSize(size);
-    text.setFillColor(col);
-    sf::FloatRect bounds = text.getLocalBounds();
-    text.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-    text.setPosition(x, y);
-    window.draw(text);
+    else if (stateStack.top() == GameState::LevelComplete)
+    {
+        graphics->renderLevelComplete(lapData, loadLapTimes());
+    }
+    else if (stateStack.top() == GameState::Paused)
+    {
+        graphics->renderPauseScreen();
+    }
 }

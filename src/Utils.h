@@ -12,3 +12,13 @@ inline float clamp(float a, float min, float max)
         return min;
     return a;
 }
+
+struct LapTime
+{
+    int id;
+    int laps;
+    float bestLap;
+    float totalTime;
+
+    LapTime() : id((int)std::time(0)), laps(0), bestLap(999999), totalTime(0) {}
+};

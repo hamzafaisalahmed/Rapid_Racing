@@ -6,10 +6,11 @@
 #include <vector>
 #include <queue>
 #include <string>
-
+#include <memory>
 #include "Track.h"
 #include "Car.h"
 #include "Utils.h"
+#include "Graphics.h"
 
 enum class GameState
 {
@@ -21,15 +22,6 @@ enum class GameState
     GameOver
 };
 
-struct LapTime
-{
-    int id;
-    int laps;
-    float bestLap;
-    float totalTime;
-
-    LapTime() : id((int)std::time(0)), laps(0), bestLap(999999), totalTime(0) {}
-};
 class Game
 {
     float dt;
@@ -44,25 +36,19 @@ class Game
 
     const float standardTurnFactor = 500.f;
 
-    sf::Font font;
-    sf::Text timerText;
-    sf::Text lapText;
-    sf::Text speedometer;
     sf::View hudView;
 
-    sf::Sprite homeBackground;
-    sf::Texture homeTexture;
-
     sf::Clock raceTimer;
+    float totalRaceTime;
     int currentLap;
     int totalLaps;
     float currentLapTime;
     LapTime lapData;
 
-    std::vector<sf::FloatRect> levelCompleteButtons;
-
     sf::Music engineAudio;
     sf::Music endscreen;
+
+    std::unique_ptr<Graphics> graphics;
 
 public:
     void init();
@@ -77,13 +63,6 @@ public:
     void saveLapTime(const LapTime &lt);
     std::vector<LapTime> loadLapTimes();
 
-    void renderGamePlay();
-    void renderHomeScreen();
-    void renderGameOver();
-    void renderLevelComplete();
-    void renderLevelSelect();
-    void renderHUD();
-    void drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };
