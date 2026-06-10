@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Utils.h"
+#include "Graphics.h"
 #include <algorithm>
 #include <cmath>
 #include <SFML/Graphics.hpp>
@@ -15,10 +16,21 @@ void Game::init()
     window.create(sf::VideoMode(1200, 800), "Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
-    // Load track first
     track.LoadTrack("assets/textures/track1.png");
-    // Load player
     player.load("assets/textures/car1.png");
+
+    if (!homeTexture.loadFromFile("assets/textures/homescreen.png"))
+        throw std::runtime_error("Home background texture not found");
+    homeBackground.setTexture(homeTexture);
+    // Position player at center of track
+    player.setPosition(sf::Vector2f(1620.f, 2800.f));
+
+    // Initialize player details
+    player.setAngle(90.f);
+    player.setCurrSpeed(0.f);
+    player.setMaxSpeed(300.f);
+    player.setAcc(50.f);
+    player.setMaxReverseSpeed(-100.f);
 
     if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
         throw std::runtime_error("Font not found");
@@ -56,7 +68,7 @@ void Game::init()
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
-    stateStack.push(GameState::Playing);
+    stateStack.push(GameState::Home);
 }
 
 void Game::run()
@@ -90,29 +102,38 @@ void Game::handleEvents()
             engineAudio.stop();
             endscreen.stop();
             window.close();
-        }
-        if (event.type == sf::Event::MouseButtonPressed)
-        {
-            sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
-
-            if (stateStack.top() == GameState::LevelComplete)
+            if (event.type == sf::Event::MouseButtonPressed)
             {
-                if (levelCompleteButtons[0].contains(mousePos))
+                if (stateStack.top() == GameState::Home)
                 {
-                    saveLapTime(lapData);
-                    lapData = LapTime();
-                    resetLevel();
-                    stateStack.pop();
-                }
-                else if (levelCompleteButtons[1].contains(mousePos))
-                {
-                    saveLapTime(lapData);
-                    endscreen.stop();
-                    window.close();
+                    return;
                 }
             }
         }
     }
+}
+if (event.type == sf::Event::MouseButtonPressed)
+{
+    sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+    if (stateStack.top() == GameState::LevelComplete)
+    {
+        if (levelCompleteButtons[0].contains(mousePos))
+        {
+            saveLapTime(lapData);
+            lapData = LapTime();
+            resetLevel();
+            stateStack.pop();
+        }
+        else if (levelCompleteButtons[1].contains(mousePos))
+        {
+            saveLapTime(lapData);
+            endscreen.stop();
+            window.close();
+        }
+    }
+}
+}
 }
 
 void Game::resetLevel()
@@ -273,32 +294,8 @@ void Game::renderGamePlay()
     player.draw(window);
     renderHUD();
 }
-
-void Game::renderHUD()
-{
-    // switch to HUD view so text stays fixed on screen
-    window.setView(hudView);
-
-    float elapsed = raceTimer.getElapsedTime().asSeconds();
-    int minutes = (int)(elapsed / 60.f);
-    int seconds = (int)(elapsed) % 60;
-    int millis = (int)((elapsed - (int)elapsed) * 100);
-
-    timerText.setString("Time: " + std::to_string(minutes) + ":" +
-                        (seconds < 10 ? "0" : "") + std::to_string(seconds) + "." +
-                        (millis < 10 ? "0" : "") + std::to_string(millis));
-
-    lapText.setString("Lap: " + std::to_string(currentLap) + "/" + std::to_string(totalLaps));
-
-    window.draw(timerText);
-    window.draw(lapText);
-
-    int displaySpeed = (int)(std::abs(player.getCurrSpeed()));
-    speedometer.setString("Speed: " + std::to_string(displaySpeed) + " km/h");
-    window.draw(speedometer);
-    // switch back to game view
-    window.setView(gameView);
 }
+
 bool Game::checkCollisions(sf::Vector2f pos, float angle)
 {
     for (auto &corner : player.getCorners(pos, angle))
