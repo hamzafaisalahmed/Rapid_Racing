@@ -12,16 +12,6 @@
 #include "Utils.h"
 #include "Graphics.h"
 
-enum class GameState
-{
-    Home,
-    Menu,
-    Playing,
-    Paused,
-    LevelComplete,
-    GameOver
-};
-
 class Game
 {
     float dt;
@@ -33,12 +23,8 @@ class Game
     Track track;
 
     Player player;
-
-    const float standardTurnFactor = 500.f;
-
     sf::View hudView;
 
-    sf::Clock raceTimer;
     float totalRaceTime;
     int currentLap;
     int totalLaps;

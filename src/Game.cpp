@@ -8,6 +8,7 @@
 #include <ctime>
 #include <stdexcept>
 #include <fstream>
+#include <functional>
 
 void Game::init()
 {
@@ -39,6 +40,8 @@ void Game::init()
     window.setView(gameView);
     graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player);
     graphics->init();
+    player.setCollisionFunction([this](sf::Vector2f pos, float angle)
+                                { return this->checkCollisions(pos, angle); });
     stateStack.push(GameState::Home);
 }
 
@@ -176,7 +179,6 @@ void Game::resetLevel()
     totalLaps = 2;
     currentLapTime = 0.f;
     track.resetCooldown();
-    raceTimer.restart();
     endscreen.stop();
     engineAudio.setVolume(0.f);
     engineAudio.play();
@@ -186,62 +188,26 @@ void Game::handlePlayerMovement(float dt)
 {
     if (window.hasFocus())
     {
-        sf::Vector2f oldPosition = player.getPosition();
-        float angle = player.getAngle();
-        float oldAngle = angle;
-        float turnFactor = 0.f;
-        bool dec = false;
+        auto xInput = carInput::None;
+        auto yInput = carInput::None;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
         {
-            turnFactor = -1.f * standardTurnFactor;
+            xInput = carInput::Left;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
         {
-            turnFactor = standardTurnFactor;
+            xInput = carInput::Right;
         }
-        angle += turnFactor * player.getTurnSpeed() * dt;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
         {
-            player.accelerate(dt);
+            yInput = carInput::Up;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
         {
-            player.decelerate(dt);
-            dec = true;
+            yInput = carInput::Down;
         }
-        else
-        {
-            dec = true;
-            if (std::abs(player.getCurrSpeed()) < 10.f)
-                player.setCurrSpeed(0.f);
-            else if (std::abs(player.getCurrSpeed()) < 60.f)
-                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction() * 0.985f);
-            else
-                player.setCurrSpeed(player.getCurrSpeed() * track.getFriction());
-        }
-
-        float speed = player.getCurrSpeed();
-        sf::Vector2f position = player.getPosition();
-        position.x += std::cos((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
-        position.y += std::sin((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
-        if (checkCollisions(position, angle))
-        {
-            player.setPosition(oldPosition);
-            player.setCurrSpeed(speed * -0.3f);
-            player.setAngle(oldAngle);
-        }
-        else
-        {
-            player.setPosition(position);
-            player.setCurrSpeed(speed);
-            player.setAngle(lerp(oldAngle, angle, 0.6f));
-        }
-        float targetVolume = 0;
-        if (dec)
-            targetVolume = 0;
-        else
-            targetVolume = std::abs(player.getCurrSpeed() / player.getMaxSpeed()) * 100.f;
+        float targetVolume = player.handleMovement(dt, xInput, yInput, track.getFriction());
         engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
     }
 }

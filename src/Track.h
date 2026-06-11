@@ -56,7 +56,7 @@ public:
     {
 
         // Bounds check to avoid memory crashes
-        if (pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y)
+        if (pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y || pos.x < 0 || pos.y < 0)
             return false;
 
         sf::Color pixel = trackImage.getPixel((unsigned int)pos.x, (unsigned int)pos.y);

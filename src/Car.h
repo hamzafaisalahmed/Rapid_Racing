@@ -3,7 +3,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
-using namespace std;
+#include "Utils.h"
+#include <functional>
+#include <cmath>
 
 class Car
 {
@@ -18,12 +20,15 @@ protected:
     float maxReverseSpeed;
     float acc;
     float maxTurnSpeed;
+    const float standardTurnFactor = 500.f;
+    std::function<bool(sf::Vector2f, float)> collisionChecker;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac)
     {
         maxTurnSpeed = ms * 0.9f;
     }
+    void setCollisionFunction(std::function<bool(sf::Vector2f, float)> cc) { collisionChecker = cc; }
     void load(const std::string &dir)
     {
         try
@@ -47,7 +52,7 @@ public:
         }
     }
 
-    vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle)
+    std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle)
     {
         // corners
         sf::Transform t;
@@ -55,11 +60,11 @@ public:
         t.rotate(angle);
 
         sf::FloatRect bounds = sprite.getLocalBounds();
-        float w = (bounds.width * sprite.getScale().x) / 2.f;
-        float hf = (bounds.height * sprite.getScale().y) * 0.65f;
-        float hr = (bounds.height * sprite.getScale().y) - hf;
+        float w = (bounds.width * sprite.getScale().x) / 2.2f;
+        float hf = (bounds.height * sprite.getScale().y) * 0.3f;
+        float hr = (bounds.height * sprite.getScale().y) * 0.6f; // might have to make custom for all cars
         return {
-            t.transformPoint(-w, hf), t.transformPoint(w, hf), t.transformPoint(w, -hr), t.transformPoint(-w, -hr)};
+            t.transformPoint(-w, hf), t.transformPoint(w, hf), t.transformPoint(-w, -hr), t.transformPoint(w, -hr)};
     }
     void accelerate(float dt)
     {
@@ -84,16 +89,16 @@ public:
         sprite.setPosition(position);
     }
     // handle friction in game
-    float getAngle() { return angle; }
-    float getMaxSpeed() { return maxSpeed; }
-    float getCurrSpeed() { return speed; }
+    float getAngle() const { return angle; }
+    float getMaxSpeed() const { return maxSpeed; }
+    float getCurrSpeed() const { return speed; }
     void setMaxSpeed(float ms)
     {
         maxSpeed = ms;
         maxTurnSpeed = ms * 0.9f;
     }
     void setAcc(float a) { acc = a; }
-    float getAcc() { return acc; }
+    float getAcc() const { return acc; }
     void setAngle(float a)
     {
         angle = a;
@@ -101,9 +106,9 @@ public:
     }
     void setCurrSpeed(float s) { speed = s; }
     void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
-    float getMaxReverseSpeed() { return maxReverseSpeed; }
-    float getMaxTurnSpeed() { return maxTurnSpeed; }
-    float getTurnSpeed()
+    float getMaxReverseSpeed() const { return maxReverseSpeed; }
+    float getMaxTurnSpeed() const { return maxTurnSpeed; }
+    float getTurnSpeed() const
     {
         if (std::abs(speed) < 1.f)
             return 0.f;
@@ -114,7 +119,68 @@ public:
             return 0.3f;
         return ratio;
     }
-    ~Car() {}
+    float handleMovement(float dt, carInput xIn, carInput yIn, float friction)
+    {
+        sf::Vector2f oldPosition = getPosition();
+        float angle = getAngle();
+        float oldAngle = angle;
+        float turnFactor = 0.f;
+        bool dec = false;
+        if (xIn == carInput::Left)
+        {
+            turnFactor = -1.f * standardTurnFactor;
+        }
+        else if (xIn == carInput::Right)
+        {
+            turnFactor = standardTurnFactor;
+        }
+        angle += turnFactor * getTurnSpeed() * dt;
+
+        if (yIn == carInput::Up)
+        {
+            accelerate(dt);
+        }
+        else if (yIn == carInput::Down)
+        {
+            decelerate(dt);
+            dec = true;
+        }
+        else
+        {
+            dec = true;
+            if (std::abs(getCurrSpeed()) < 10.f)
+                setCurrSpeed(0.f);
+            else if (std::abs(getCurrSpeed()) < 60.f)
+                setCurrSpeed(getCurrSpeed() * friction * 0.985f);
+            else
+                setCurrSpeed(getCurrSpeed() * friction);
+        }
+
+        float speed = getCurrSpeed();
+        sf::Vector2f position = getPosition();
+        position.x += std::cos((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
+        position.y += std::sin((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
+        if (collisionChecker(position, angle))
+        {
+            setPosition(oldPosition);
+            setCurrSpeed(speed * -0.3f);
+            setAngle(oldAngle);
+        }
+        else
+        {
+            setPosition(position);
+            setCurrSpeed(speed);
+            setAngle(lerp(oldAngle, angle, 0.6f));
+        }
+        float targetVolume = 0;
+        if (dec)
+            targetVolume = 0;
+        else
+            targetVolume = std::abs(getCurrSpeed() / getMaxSpeed()) * 100.f;
+        return targetVolume;
+    }
+
+    ~Car() = default;
 };
 class Player : public Car
 {

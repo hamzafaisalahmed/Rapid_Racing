@@ -22,3 +22,22 @@ struct LapTime
 
     LapTime() : id((int)std::time(0)), laps(0), bestLap(999999), totalTime(0) {}
 };
+
+enum class GameState
+{
+    Home,
+    Menu,
+    Playing,
+    Paused,
+    LevelComplete,
+    GameOver
+};
+
+enum class carInput
+{
+    None,
+    Up,
+    Down,
+    Left,
+    Right
+};

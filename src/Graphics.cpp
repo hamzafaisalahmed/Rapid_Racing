@@ -241,7 +241,7 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
         int s = (int)(time) % 60;
         int milli = (int)((time - (int)time) * 1000);
 
-        text += std::to_string(i + 1) + ". ID:" + std::to_string(allTimes[i].id) + " | " +
+        text += std::to_string(i + 1) + ". ID:" + std::to_string(sortedTimes[i].id) + " | " +
                 std::to_string(m) + ":" +
                 (s < 10 ? "0" : "") + std::to_string(s) + "." +
                 (milli < 100 ? "0" : "") + (milli < 10 ? "0" : "") + std::to_string(milli) + "\n\n";
@@ -299,6 +299,13 @@ void Graphics::renderGamePlay()
 
     track.draw(window, sf::VideoMode::getDesktopMode());
     player.draw(window);
+    for (auto &corner : player.getCorners(player.getPosition(), player.getAngle()))
+    {
+        sf::CircleShape dot(1.f);
+        dot.setFillColor(sf::Color::Red);
+        dot.setPosition(corner.x - 1.f, corner.y - 1.f);
+        window.draw(dot);
+    }
 }
 
 void Graphics::renderPauseScreen()
