@@ -176,7 +176,7 @@ void Graphics::renderHomeScreen()
     sf::Color hoverOutline(255, 60, 70);
     sf::Color hoverText(255, 255, 255);
 
-    std::string menuItems[] = {"SINGLEPLAYER", "MULTIPLAYER", "LEADERBOARD", "SETTINGS"};
+    std::string menuItems[] = {"VS AI", "PVP", "TIME TRIAL", "SETTINGS"};
     unsigned int fontSizes[] = {18, 20, 18, 22};
 
     for (size_t i = 0; i < homeButtons.size(); ++i)

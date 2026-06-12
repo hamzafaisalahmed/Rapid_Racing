@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <cmath>
 
 inline float lerp(float a, float b, float t) { return a + (b - a) * t; }
 
@@ -27,10 +28,11 @@ enum class GameState
 {
     Home,
     Menu,
-    Playing,
+    TimeTrial,
     Paused,
     LevelComplete,
-    GameOver
+    GameOver,
+    PVP
 };
 
 enum class carInput
@@ -49,3 +51,8 @@ struct Waypoint
     sf::Vector2f mid;
     Waypoint(sf::Vector2f l, sf::Vector2f r) : left(l), right(r), mid((l.x + r.x) / 2, (l.y + r.y) / 2) {}
 };
+
+inline float distance(sf::Vector2f a, sf::Vector2f b)
+{
+    return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+}

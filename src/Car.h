@@ -22,12 +22,11 @@ protected:
     float maxTurnSpeed;
     const float standardTurnFactor = 500.f;
     std::function<bool(sf::Vector2f, float)> collisionChecker;
+    int currWaypointIndex;
+    int currLap;
 
 public:
-    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac)
-    {
-        maxTurnSpeed = ms * 0.9f;
-    }
+    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0) {}
     void setCollisionFunction(std::function<bool(sf::Vector2f, float)> cc) { collisionChecker = cc; }
     void load(const std::string &dir)
     {
@@ -180,6 +179,22 @@ public:
         return targetVolume;
     }
 
+    bool updateWaypoint(const std::vector<Waypoint> &waypoints)
+    {
+        if (distance(waypoints[currWaypointIndex].mid, getPosition()) < (69.f * 69.f)) // squared distance so square highest width 138/2
+        {
+            currWaypointIndex++;
+            if ((size_t)currWaypointIndex >= waypoints.size())
+            {
+                currWaypointIndex = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+    int getCurrWaypointIndex() const { return currWaypointIndex; }
+    int getCurrLap() const { return currLap; }
+    void setCurrLap(int c) { currLap = c; }
     ~Car() = default;
 };
 class Player : public Car

@@ -22,7 +22,7 @@ void Game::resetLevel()
 
     player.setMaxReverseSpeed(-100.f);
 
-    currentLap = 0;
+    currentLap = 1;
     totalLaps = 2;
     currentLapTime = 0.f;
     track.resetCooldown();
@@ -42,6 +42,7 @@ void Game::init()
     track.LoadTrack("assets/textures/track1.png");
     player.load("assets/textures/car1.png");
 
+    waypoints = track.getWaypoints();
     if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
         throw std::runtime_error("Engine sound not found\n");
     engineAudio.setLoop(true);
@@ -77,7 +78,7 @@ void Game::run()
             dt = 0.05f;
         handleEvents();
         GameState current = stateStack.top();
-        if (current == GameState::Playing)
+        if (current == GameState::TimeTrial)
         {
             update(dt);
         }
@@ -115,8 +116,8 @@ void Game::handleEvents()
                     {
                         if (hb[i].contains(mappedMousePos))
                         {
-                            if (i == 0)
-                                stateStack.push(GameState::Playing);
+                            if (i == 2)
+                                stateStack.push(GameState::TimeTrial);
                             // else if (i == 1)
                             //     stateStack.push(GameState::Multiplayer);
                             // else if (i == 2)
@@ -172,7 +173,7 @@ void Game::handleEvents()
                     engineAudio.stop();
                 }
             }
-            else if (stateStack.top() == GameState::Playing)
+            else if (stateStack.top() == GameState::TimeTrial)
             {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
@@ -217,14 +218,15 @@ void Game::handlePlayerMovement(float dt)
 
 void Game::update(float dt)
 {
-    if (stateStack.top() == GameState::Playing)
+    if (stateStack.top() == GameState::TimeTrial)
     {
         handlePlayerMovement(dt);
         totalRaceTime += dt;
         currentLapTime += dt;
-        if (track.isFinishLine(player.getCorners(player.getPosition(), player.getAngle()), dt))
+        if (player.updateWaypoint(waypoints))
         {
             currentLap++;
+            player.setCurrLap(currentLap);
             if (currentLap > 1)
             {
                 lapData.totalTime += currentLapTime;
@@ -280,6 +282,16 @@ std::vector<LapTime> Game::loadLapTimes()
     return times;
 }
 
+bool Game::carPosition(const Car &a, const Car &b)
+{
+    if (a.getCurrLap() != b.getCurrLap())
+        return a.getCurrLap() > b.getCurrLap();
+    if (a.getCurrWaypointIndex() != b.getCurrWaypointIndex())
+        return a.getCurrWaypointIndex() > b.getCurrWaypointIndex();
+    const Waypoint &w = waypoints[a.getCurrWaypointIndex()];
+    return distance(a.getPosition(), w.mid) < distance(b.getPosition(), w.mid);
+}
+
 void Game::render()
 {
     window.clear(sf::Color::Black);
@@ -287,7 +299,7 @@ void Game::render()
     {
         graphics->renderHomeScreen();
     }
-    else if (stateStack.top() == GameState::Playing)
+    else if (stateStack.top() == GameState::TimeTrial)
     {
         graphics->renderGamePlay();
         graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);

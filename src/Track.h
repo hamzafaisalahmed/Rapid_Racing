@@ -46,14 +46,6 @@ public:
     {
         waypoints.clear();
         vector<vector<float>> waypointCoords = {
-            // {500, 2500, 500, 2625},
-            // {3990, 2500, 3990, 2625},
-            // {4088, 2475, 4142, 2590},
-            // {4175, 2405, 4277, 2487},
-            // {4209, 2301, 4352, 2300},
-            // {4198, 2219, 4325, 2166},
-            // {4142, 2131, 4237, 2041},
-            // {4035, 2033, 4148, 1957}};
             {1754, 2500, 1754, 2625},
             {3990, 2501, 3992, 2623},
             {4042, 2495, 4067, 2612},
@@ -186,26 +178,26 @@ public:
     {
         return frictionFactor;
     }
-    bool isFinishLine(const std::vector<sf::Vector2f> &positions, float dt)
-    {
-        if (lapCooldown > 0.f)
-        {
-            lapCooldown -= dt;
-            return false;
-        }
-        for (const auto &pos : positions)
-        {
-            if (pos.x < 0 || pos.y < 0 || pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y)
-                continue;
-            sf::Color pixel = trackImage.getPixel((unsigned int)pos.x, (unsigned int)pos.y);
-            if (pixel.r <= 255 && pixel.r >= 250 && pixel.g <= 250 && pixel.g >= 240 && pixel.b >= 0 && pixel.b <= 5)
-            {
-                lapCooldown = 10.f;
-                return true;
-            }
-        }
-        return false;
-    }
+    // bool isFinishLine(const std::vector<sf::Vector2f> &positions, float dt)
+    // {
+    //     if (lapCooldown > 0.f)
+    //     {
+    //         lapCooldown -= dt;
+    //         return false;
+    //     }
+    //     for (const auto &pos : positions)
+    //     {
+    //         if (pos.x < 0 || pos.y < 0 || pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y)
+    //             continue;
+    //         sf::Color pixel = trackImage.getPixel((unsigned int)pos.x, (unsigned int)pos.y);
+    //         if (pixel.r <= 255 && pixel.r >= 250 && pixel.g <= 250 && pixel.g >= 240 && pixel.b >= 0 && pixel.b <= 5)
+    //         {
+    //             lapCooldown = 10.f;
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // }
     void resetCooldown()
     {
         lapCooldown = 0.0f;

@@ -30,7 +30,8 @@ class Game
     int totalLaps;
     float currentLapTime;
     LapTime lapData;
-
+    std::vector<Waypoint> waypoints;
+    std::vector<Car> cars;
     sf::Music engineAudio;
     sf::Music endscreen;
 
@@ -49,6 +50,7 @@ public:
     void saveLapTime(const LapTime &lt);
     std::vector<LapTime> loadLapTimes();
 
+    bool carPosition(const Car &a, const Car &b);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };
