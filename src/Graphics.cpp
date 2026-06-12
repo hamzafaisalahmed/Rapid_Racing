@@ -271,20 +271,11 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
 
 void Graphics::renderGamePlay()
 {
-    // Get track dimensions
     sf::Vector2u trackSize = track.getSize();
-
-    // Get player position
     sf::Vector2f playerPos = player.getPosition();
-
-    // Center view on player, constrained within track bounds
     sf::Vector2f viewCenter = playerPos;
-
-    // Constrain view to not go out of track bounds
     float viewWidth = gameView.getSize().x;
     float viewHeight = gameView.getSize().y;
-
-    // Keep view centered on player, but within track bounds
     if (viewCenter.x - viewWidth / 2.f < 0.f)
         viewCenter.x = viewWidth / 2.f;
     if (viewCenter.x + viewWidth / 2.f > trackSize.x)
@@ -293,19 +284,11 @@ void Graphics::renderGamePlay()
         viewCenter.y = viewHeight / 2.f;
     if (viewCenter.y + viewHeight / 2.f > trackSize.y)
         viewCenter.y = trackSize.y - viewHeight / 2.f;
-
     gameView.setCenter(viewCenter);
     window.setView(gameView);
-
     track.draw(window, sf::VideoMode::getDesktopMode());
     player.draw(window);
-    for (auto &corner : player.getCorners(player.getPosition(), player.getAngle()))
-    {
-        sf::CircleShape dot(1.f);
-        dot.setFillColor(sf::Color::Red);
-        dot.setPosition(corner.x - 1.f, corner.y - 1.f);
-        window.draw(dot);
-    }
+    debugPlayDisplay();
 }
 
 void Graphics::renderPauseScreen()
@@ -336,5 +319,28 @@ void Graphics::renderPauseScreen()
 
         window.draw(button);
         drawTextCentered(labels[i], rect.left + rect.width / 2.f, rect.top + rect.height / 2.f, 22, isHovered ? sf::Color::White : standardText);
+    }
+}
+
+void Graphics::debugPlayDisplay()
+{
+    for (auto &corner : player.getCorners(player.getPosition(), player.getAngle()))
+    {
+        sf::CircleShape dot(1.f);
+        dot.setFillColor(sf::Color::Red);
+        dot.setPosition(corner.x - 1.f, corner.y - 1.f);
+        window.draw(dot);
+    }
+    std::vector<Waypoint> waypoints = track.getWaypoints();
+    for (const auto &waypoint : waypoints)
+    {
+        sf::CircleShape dotL(1.f);
+        dotL.setFillColor(sf::Color::Red);
+        sf::CircleShape dotR(1.f);
+        dotR.setFillColor(sf::Color::Green);
+        dotL.setPosition(waypoint.left.x - 1.f, waypoint.left.y - 1.f);
+        dotR.setPosition(waypoint.right.x - 1.f, waypoint.right.y - 1.f);
+        window.draw(dotL);
+        window.draw(dotR);
     }
 }

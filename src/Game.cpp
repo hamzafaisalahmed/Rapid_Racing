@@ -10,6 +10,28 @@
 #include <fstream>
 #include <functional>
 
+void Game::resetLevel()
+{
+    player.setPosition(sf::Vector2f(1620.f, 2550.f));
+    player.setAngle(90.f);
+    player.setCurrSpeed(0.f);
+    // player.setMaxSpeed(300.f);
+    // player.setAcc(50.f);
+    player.setMaxSpeed(500.f);
+    player.setAcc(200.f);
+
+    player.setMaxReverseSpeed(-100.f);
+
+    currentLap = 0;
+    totalLaps = 2;
+    currentLapTime = 0.f;
+    track.resetCooldown();
+    endscreen.stop();
+    engineAudio.setVolume(0.f);
+    engineAudio.play();
+    totalRaceTime = 0.f;
+}
+
 void Game::init()
 {
     std::srand((unsigned)std::time(0));
@@ -164,25 +186,6 @@ void Game::handleEvents()
             }
         }
     }
-}
-
-void Game::resetLevel()
-{
-    player.setPosition(sf::Vector2f(1620.f, 2550.f));
-    player.setAngle(90.f);
-    player.setCurrSpeed(0.f);
-    player.setMaxSpeed(300.f);
-    player.setAcc(50.f);
-    player.setMaxReverseSpeed(-100.f);
-
-    currentLap = 0;
-    totalLaps = 2;
-    currentLapTime = 0.f;
-    track.resetCooldown();
-    endscreen.stop();
-    engineAudio.setVolume(0.f);
-    engineAudio.play();
-    totalRaceTime = 0.f;
 }
 void Game::handlePlayerMovement(float dt)
 {

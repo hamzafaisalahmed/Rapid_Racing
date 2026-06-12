@@ -41,3 +41,11 @@ enum class carInput
     Left,
     Right
 };
+
+struct Waypoint
+{
+    sf::Vector2f left;
+    sf::Vector2f right;
+    sf::Vector2f mid;
+    Waypoint(sf::Vector2f l, sf::Vector2f r) : left(l), right(r), mid((l.x + r.x) / 2, (l.y + r.y) / 2) {}
+};

@@ -39,6 +39,7 @@ public:
     void renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes);
     void renderGamePlay();
     void renderPauseScreen();
+    void debugPlayDisplay();
     const std::vector<sf::FloatRect> &getHomeButtons() const { return homeButtons; }
     const std::vector<sf::FloatRect> &getLevelCompleteButtons() const { return levelCompleteButtons; }
     const std::vector<sf::FloatRect> &getPauseScreenButtons() const { return pauseButtons; }
