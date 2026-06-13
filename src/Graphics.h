@@ -22,9 +22,11 @@ class Graphics
     sf::Sprite pause;
     sf::Texture pauseTexture;
     sf::FloatRect pauseButton;
+    sf::FloatRect resetButton;
     std::vector<sf::FloatRect> pauseButtons;
     std::vector<sf::FloatRect> levelCompleteButtons;
     std::vector<sf::FloatRect> homeButtons;
+    std::vector<sf::FloatRect> settingsButtons;
     const sf::Vector2f homeBtnSize{240.f, 75.f};
     Track &track;
     Player &player;
@@ -43,5 +45,10 @@ public:
     const std::vector<sf::FloatRect> &getHomeButtons() const { return homeButtons; }
     const std::vector<sf::FloatRect> &getLevelCompleteButtons() const { return levelCompleteButtons; }
     const std::vector<sf::FloatRect> &getPauseScreenButtons() const { return pauseButtons; }
+    const std::vector<sf::FloatRect> &getSettingsButtons() const { return settingsButtons; }
+
     const sf::FloatRect &getPauseButton() const { return pauseButton; }
+    const sf::FloatRect &getResetButton() const { return resetButton; }
+    void renderResetButton();
+    void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
 };

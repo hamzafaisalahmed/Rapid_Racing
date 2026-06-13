@@ -25,8 +25,10 @@ protected:
     int currWaypointIndex;
     int currLap;
 
+    float stuckTime;
+
 public:
-    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0) {}
+    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0), stuckTime(0.f) {}
     void setCollisionFunction(std::function<bool(sf::Vector2f, float)> cc) { collisionChecker = cc; }
     void load(const std::string &dir)
     {
@@ -195,6 +197,23 @@ public:
     int getCurrWaypointIndex() const { return currWaypointIndex; }
     int getCurrLap() const { return currLap; }
     void setCurrLap(int c) { currLap = c; }
+    void updateStuckTime(float dt)
+    {
+        if (std::abs(getCurrSpeed()) < 10.f)
+            stuckTime += dt;
+        else
+            stuckTime = 0.f;
+    }
+    bool isStuck() const { return stuckTime > 5.f; }
+    void resetPosition(const std::vector<Waypoint> &waypoints)
+    {
+        int index = 0;
+        if (currWaypointIndex != 0)
+            index = currWaypointIndex - 1;
+        setPosition(waypoints[index].mid);
+        setCurrSpeed(0.f);
+        stuckTime = 0.f;
+    }
     ~Car() = default;
 };
 class Player : public Car

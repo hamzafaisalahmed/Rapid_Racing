@@ -17,17 +17,26 @@ void Game::resetLevel()
     player.setCurrSpeed(0.f);
     // player.setMaxSpeed(300.f);
     // player.setAcc(50.f);
-    player.setMaxSpeed(500.f);
-    player.setAcc(200.f);
+    const CarPreset &selected = carPresets[(size_t)selectedCarLvl];
+    player.setMaxSpeed(selected.maxSpeed);
+    player.setAcc(selected.AccRate);
 
     player.setMaxReverseSpeed(-100.f);
 
     currentLap = 1;
-    totalLaps = 2;
+    totalLaps = maxLaps[(size_t)selectedLaps];
     currentLapTime = 0.f;
     track.resetCooldown();
     endscreen.stop();
     engineAudio.setVolume(0.f);
+    if (audioMuted)
+    {
+        endscreen.setVolume(0.f);
+    }
+    else
+    {
+        endscreen.setVolume(70.f);
+    }
     engineAudio.play();
     totalRaceTime = 0.f;
 }
@@ -51,6 +60,10 @@ void Game::init()
         throw std::runtime_error("Endscreen music file not found\n");
     endscreen.setLoop(true);
     endscreen.setVolume(70.f);
+
+    selectedCarLvl = 1;
+    selectedLaps = 1;
+    audioMuted = false;
 
     resetLevel();
 
@@ -117,13 +130,15 @@ void Game::handleEvents()
                         if (hb[i].contains(mappedMousePos))
                         {
                             if (i == 2)
+                            {
                                 stateStack.push(GameState::TimeTrial);
+                            }
                             // else if (i == 1)
                             //     stateStack.push(GameState::Multiplayer);
                             // else if (i == 2)
                             //     stateStack.push(GameState::Leaderboard);
-                            // else if (i == 3)
-                            //     stateStack.push(GameState::Settings);
+                            else if (i == 3)
+                                stateStack.push(GameState::Settings);
 
                             break; // Exit loop once button action triggers
                         }
@@ -143,8 +158,11 @@ void Game::handleEvents()
                 else if (levelCompleteButtons[1].contains(mousePos))
                 {
                     saveLapTime(lapData);
+                    engineAudio.stop();
                     endscreen.stop();
-                    window.close();
+                    while (stateStack.size() > 0)
+                        stateStack.pop();
+                    stateStack.push(GameState::Home);
                 }
             }
             else if (stateStack.top() == GameState::Paused)
@@ -184,6 +202,43 @@ void Game::handleEvents()
                     stateStack.push(GameState::Paused);
                     engineAudio.pause();
                 }
+
+                if (player.isStuck() && graphics->getResetButton().contains(mappedMousePos))
+                {
+                    player.resetPosition(waypoints);
+                }
+            }
+            else if (stateStack.top() == GameState::Settings)
+            {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
+
+                const auto &buttons = graphics->getSettingsButtons();
+
+                for (size_t i = 0; i < buttons.size(); ++i)
+                {
+                    if (buttons[i].contains(mp))
+                    {
+                        if (i <= 2)
+                        {
+                            selectedCarLvl = i;
+                        }
+                        else if (i <= 6)
+                        {
+                            selectedLaps = i - 3;
+                        }
+                        else if (i == 7)
+                        {
+                            audioMuted = !audioMuted;
+                        }
+                        else if (i == 8)
+                        {
+                            resetLevel();
+                            stateStack.pop();
+                        }
+                        break;
+                    }
+                }
             }
         }
     }
@@ -212,7 +267,8 @@ void Game::handlePlayerMovement(float dt)
             yInput = carInput::Down;
         }
         float targetVolume = player.handleMovement(dt, xInput, yInput, track.getFriction());
-        engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
+        if (!audioMuted)
+            engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
     }
 }
 
@@ -223,6 +279,7 @@ void Game::update(float dt)
         handlePlayerMovement(dt);
         totalRaceTime += dt;
         currentLapTime += dt;
+        player.updateStuckTime(dt);
         if (player.updateWaypoint(waypoints))
         {
             currentLap++;
@@ -303,6 +360,8 @@ void Game::render()
     {
         graphics->renderGamePlay();
         graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);
+        if (player.isStuck())
+            graphics->renderResetButton();
     }
     else if (stateStack.top() == GameState::LevelComplete)
     {
@@ -311,5 +370,9 @@ void Game::render()
     else if (stateStack.top() == GameState::Paused)
     {
         graphics->renderPauseScreen();
+    }
+    else if (stateStack.top() == GameState::Settings)
+    {
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, audioMuted);
     }
 }

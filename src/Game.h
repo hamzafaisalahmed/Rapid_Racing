@@ -31,11 +31,21 @@ class Game
     float currentLapTime;
     LapTime lapData;
     std::vector<Waypoint> waypoints;
-    std::vector<Car> cars;
+
+    std::vector<Player> PlayerCars;
+    std::vector<AI> AICars;
+
     sf::Music engineAudio;
     sf::Music endscreen;
 
     std::unique_ptr<Graphics> graphics;
+
+    int selectedLaps;
+    int selectedCarLvl;
+    bool audioMuted;
+
+    std::vector<CarPreset> carPresets{CarPreset(300.f, 50.f), CarPreset(400.f, 100.f), CarPreset(500.f, 200.f)};
+    std::vector<int> maxLaps{1, 2, 3, 5};
 
 public:
     void init();

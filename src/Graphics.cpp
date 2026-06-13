@@ -32,6 +32,8 @@ void Graphics::init()
     speedometer.setFillColor(sf::Color::White);
     speedometer.setPosition(10.f, 700.f);
 
+    resetButton = sf::FloatRect(500.f, 650.f, 200.f, 50.f);
+
     homeButtons.clear();
     float positionsY[] = {100.f, 275.f, 450.f, 625.f};
     float buttonX = 35.f;
@@ -48,6 +50,25 @@ void Graphics::init()
 
     pauseButtons.push_back(sf::FloatRect(centerX, 350.f, btnWidth, btnHeight)); // Continue
     pauseButtons.push_back(sf::FloatRect(centerX, 480.f, btnWidth, btnHeight)); // Exit
+
+    settingsButtons.clear();
+
+    // Define all 9 button positions visually in a single vector
+    std::vector<sf::Vector2f> settingsPos = {
+        {220.f, 220.f}, {480.f, 220.f}, {740.f, 220.f}, // Indices 0-2: Levels (1, 2, 3)
+        {90.f, 400.f},
+        {350.f, 400.f},
+        {610.f, 400.f},
+        {870.f, 400.f}, // Indices 3-6: Laps (1, 2, 3, 5)
+        {480.f, 550.f}, // Index 7: Mute
+        {480.f, 650.f}  // Index 8: Return to Menu
+    };
+
+    // Populate the boundaries using the standard home button size
+    for (const auto &pos : settingsPos)
+    {
+        settingsButtons.push_back(sf::FloatRect(pos.x, pos.y, homeBtnSize.x, homeBtnSize.y));
+    }
 }
 void Graphics::drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col)
 {
@@ -251,7 +272,7 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
 
     // Buttons
     std::vector<std::string>
-        buttonNames = {"RESTART", "EXIT"};
+        buttonNames = {"RESTART", "BACK TO MENU"};
     levelCompleteButtons.clear();
 
     for (int i = 0; i < 2; i++)
@@ -342,5 +363,89 @@ void Graphics::debugPlayDisplay()
         dotR.setPosition(waypoint.right.x - 1.f, waypoint.right.y - 1.f);
         window.draw(dotL);
         window.draw(dotR);
+    }
+}
+
+void Graphics::renderResetButton()
+{
+    // Switch to HUD space so it stays fixed on screen
+    window.setView(hudView);
+
+    // 1. Draw the background plate using the stored resetButton bounds
+    sf::RectangleShape rect(sf::Vector2f(resetButton.width, resetButton.height));
+    rect.setPosition(resetButton.left, resetButton.top);
+    rect.setFillColor(sf::Color(30, 30, 30, 230)); // Clean dark gray background
+    rect.setOutlineColor(sf::Color::Red);          // Red warning border
+    rect.setOutlineThickness(2.f);
+    window.draw(rect);
+
+    // 2. Leverage your existing helper to handle the text creation and centering
+    float centerX = resetButton.left + resetButton.width / 2.f;
+    float centerY = resetButton.top + resetButton.height / 2.f;
+
+    drawTextCentered("RESET CAR", centerX, centerY, 20, sf::Color::White);
+}
+
+void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted)
+{
+    window.setView(hudView);
+    window.clear(sf::Color(20, 20, 25));
+
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+    // Standard Theme Colors
+    sf::Color standardFill(45, 10, 15, 230);
+    sf::Color standardOutline(110, 30, 35);
+    sf::Color activeFill(180, 25, 35);
+    sf::Color hoverOutline(255, 60, 70);
+
+    // Static Page Text
+    drawTextCentered("SETTINGS", 600.f, 50.f, 45, sf::Color::White);
+    drawTextCentered("CAR PERFORMANCE PRESET", 600.f, 170.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("RACE LAPS", 600.f, 350.f, 22, sf::Color(200, 200, 200));
+
+    // Parallel Arrays mapping exactly to the 9 settingsButtons indices
+    std::string labels[] = {
+        "LEVEL 1", "LEVEL 2", "LEVEL 3",
+        "1 LAP", "2 LAPS", "3 LAPS", "5 LAPS",
+        isMuted ? "AUDIO: MUTED" : "AUDIO: ON",
+        "RETURN TO MENU"};
+
+    // Evaluates all configuration conditions instantly without nested logic
+    bool activeStates[] = {
+        currentLevel == 0, currentLevel == 1, currentLevel == 2,
+        currentLaps == 0, currentLaps == 1, currentLaps == 2, currentLaps == 3,
+        isMuted,
+        false // Return button is never "toggled" on
+    };
+
+    // The single, ultra-clean rendering loop
+    for (size_t i = 0; i < settingsButtons.size(); ++i)
+    {
+        sf::FloatRect rect = settingsButtons[i];
+
+        sf::RectangleShape button(homeBtnSize);
+        button.setPosition(rect.left, rect.top);
+
+        bool isHovered = rect.contains(mappedMousePos);
+        bool isActive = activeStates[i];
+
+        // Apply dynamic styling
+        button.setFillColor(isActive ? activeFill : standardFill);
+
+        if (isHovered)
+        {
+            button.setOutlineColor(hoverOutline);
+            button.setOutlineThickness(3.f);
+        }
+        else
+        {
+            button.setOutlineColor(isActive ? sf::Color::White : standardOutline);
+            button.setOutlineThickness(2.f);
+        }
+
+        window.draw(button);
+        drawTextCentered(labels[i], rect.left + rect.width / 2.f, rect.top + rect.height / 2.f, 18, sf::Color::White);
     }
 }

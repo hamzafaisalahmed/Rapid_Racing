@@ -32,7 +32,8 @@ enum class GameState
     Paused,
     LevelComplete,
     GameOver,
-    PVP
+    PVP,
+    Settings
 };
 
 enum class carInput
@@ -56,3 +57,10 @@ inline float distance(sf::Vector2f a, sf::Vector2f b)
 {
     return (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
 }
+
+struct CarPreset
+{
+    float maxSpeed;
+    float AccRate;
+    CarPreset(float m, float a) : maxSpeed(m), AccRate(a) {}
+};
