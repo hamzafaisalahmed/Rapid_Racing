@@ -28,11 +28,10 @@ enum class GameState
 {
     Home,
     Menu,
-    TimeTrial,
+    Playing,
     Paused,
     LevelComplete,
     GameOver,
-    PVP,
     Settings
 };
 
@@ -64,3 +63,23 @@ struct CarPreset
     float AccRate;
     CarPreset(float m, float a) : maxSpeed(m), AccRate(a) {}
 };
+
+enum class Gamemode
+{
+    TimeTrial,
+    PVP,
+    AI,
+    None
+};
+
+inline std::string formatRaceTime(float secondsTotal)
+{
+    int minutes = (int)(secondsTotal / 60.f);
+    int seconds = (int)(secondsTotal) % 60;
+    int millis = (int)((secondsTotal - (int)secondsTotal) * 100);
+
+    // Always formats uniformly as MM:SS.mm
+    return std::to_string(minutes) + ":" +
+           (seconds < 10 ? "0" : "") + std::to_string(seconds) + "." +
+           (millis < 10 ? "0" : "") + std::to_string(millis);
+}

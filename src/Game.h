@@ -22,7 +22,8 @@ class Game
     sf::View gameView;
     Track track;
 
-    Player player;
+    Player player1;
+    Player player2;
     sf::View hudView;
 
     float totalRaceTime;
@@ -32,8 +33,7 @@ class Game
     LapTime lapData;
     std::vector<Waypoint> waypoints;
 
-    std::vector<Player> PlayerCars;
-    std::vector<AI> AICars;
+    std::vector<Car *> cars;
 
     sf::Music engineAudio;
     sf::Music endscreen;
@@ -44,8 +44,11 @@ class Game
     int selectedCarLvl;
     bool audioMuted;
 
+    Gamemode selectedMode;
     std::vector<CarPreset> carPresets{CarPreset(300.f, 50.f), CarPreset(400.f, 100.f), CarPreset(500.f, 200.f)};
     std::vector<int> maxLaps{1, 2, 3, 5};
+
+    int winner;
 
 public:
     void init();
@@ -56,10 +59,10 @@ public:
     void handleEvents();
     void handlePlayerMovement(float dt);
     void resetLevel();
-
+    void checkWinner(Car *player, int playerNo);
     void saveLapTime(const LapTime &lt);
     std::vector<LapTime> loadLapTimes();
-
+    void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;

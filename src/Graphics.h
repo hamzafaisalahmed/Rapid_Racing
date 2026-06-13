@@ -51,4 +51,8 @@ public:
     const sf::FloatRect &getResetButton() const { return resetButton; }
     void renderResetButton();
     void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
+
+    void renderPVPGameplay(const Player &player2);
+    void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
+    void renderPVPLvlComplete(const Player &player2);
 };

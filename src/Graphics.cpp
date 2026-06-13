@@ -88,15 +88,7 @@ void Graphics::renderHUD(float elapsed, int currentLap, int totalLaps, float cur
     window.setView(hudView);
 
     // --- TELEMETRY CALCULATIONS ---
-    int minutes = (int)(elapsed / 60.f);
-    int seconds = (int)(elapsed) % 60;
-    int millis = (int)((elapsed - (int)elapsed) * 100);
-
-    // Format the time string nicely with leading zeros
-    std::string timeStr = std::to_string(minutes) + ":" +
-                          (seconds < 10 ? "0" : "") + std::to_string(seconds) + "." +
-                          (millis < 10 ? "0" : "") + std::to_string(millis);
-
+    std::string timeStr = formatRaceTime(elapsed);
     int displaySpeed = (int)(std::abs(player.getCurrSpeed()));
 
     // ========================================================
@@ -447,5 +439,172 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
 
         window.draw(button);
         drawTextCentered(labels[i], rect.left + rect.width / 2.f, rect.top + rect.height / 2.f, 18, sf::Color::White);
+    }
+}
+
+void Graphics::renderPVPGameplay(const Player &player2)
+{
+    sf::Vector2u trackSize = track.getSize();
+
+    // Store players and viewport starting X-coordinates in arrays for iteration
+    const Player *players[2] = {&player, &player2};
+    float viewportsX[2] = {0.f, 0.5f};
+
+    // Dynamic Clamping Math based on zoom level
+    const float zoomFactor = 0.4f;
+    const float halfW = 300.f * zoomFactor; // 120.f
+    const float halfH = 400.f * zoomFactor; // 160.f
+
+    // One loop handles both Player 1 (i=0) and Player 2 (i=1) perfectly
+    for (int i = 0; i < 2; ++i)
+    {
+        sf::View view;
+        view.setSize(600.f, 800.f);
+        view.setViewport(sf::FloatRect(viewportsX[i], 0.f, 0.5f, 1.f));
+        view.zoom(zoomFactor);
+
+        sf::Vector2f pos = players[i]->getPosition();
+
+        // Fixed Camera Clamping using the zoomed dimensions
+        if (pos.x < halfW)
+            pos.x = halfW;
+        else if (pos.x > trackSize.x - halfW)
+            pos.x = trackSize.x - halfW;
+
+        if (pos.y < halfH)
+            pos.y = halfH;
+        else if (pos.y > trackSize.y - halfH)
+            pos.y = trackSize.y - halfH;
+
+        view.setCenter(pos);
+        window.setView(view);
+
+        // Draw the world for the current viewport
+        track.draw(window, sf::VideoMode::getDesktopMode());
+        player.draw(window);
+        player2.draw(window);
+    }
+}
+
+void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime)
+{
+    window.setView(hudView);
+
+    // Standard Theme Colors
+    sf::Color podiumFill(20, 5, 8, 220);
+    sf::Color outline(210, 35, 45);
+
+    // --- 1. CENTER SHARED DISPLAY (Time & Total Laps) ---
+    sf::RectangleShape centerPanel(sf::Vector2f(260.f, 70.f));
+    centerPanel.setPosition(470.f, 15.f); // Centered over the 600.f dividing line
+    centerPanel.setFillColor(podiumFill);
+    centerPanel.setOutlineColor(outline);
+    centerPanel.setOutlineThickness(2.f);
+    window.draw(centerPanel);
+
+    // Formats the raw float time internally now
+    drawTextCentered("TIME: " + formatRaceTime(totalRaceTime), 600.f, 35.f, 22, sf::Color::White);
+    drawTextCentered("TOTAL LAPS: " + std::to_string(totalLaps), 600.f, 65.f, 16, sf::Color(200, 200, 200));
+
+    // --- 2. CENTER DIVIDER ---
+    sf::RectangleShape divider(sf::Vector2f(6.f, 715.f));
+    divider.setPosition(597.f, 85.f);
+    divider.setFillColor(sf::Color::White);
+    divider.setOutlineColor(sf::Color::Black);
+    divider.setOutlineThickness(2.f);
+    window.draw(divider);
+
+    // --- 3. INDIVIDUAL PLAYER STATS ---
+    // Safely handles the +1 lap offset and pulls all data internally
+    int laps[] = {player.getCurrLap() + 1, player2.getCurrLap() + 1};
+    int positions[] = {player.getRacePos(), player2.getRacePos()};
+    int speeds[] = {(int)std::abs(player.getCurrSpeed()), (int)std::abs(player2.getCurrSpeed())};
+    float sideX[] = {15.f, 1005.f};
+
+    for (int i = 0; i < 2; ++i)
+    {
+        // Top Boxes (Position & Current Lap)
+        sf::RectangleShape topBox(sf::Vector2f(180.f, 60.f));
+        topBox.setPosition(sideX[i], 15.f + 50.f);
+        topBox.setFillColor(podiumFill);
+        topBox.setOutlineColor(outline);
+        topBox.setOutlineThickness(2.f);
+        window.draw(topBox);
+
+        std::string posStr = (positions[i] == 1) ? "1ST PLACE" : "2ND PLACE";
+        float centerX = sideX[i] + 90.f;
+
+        drawTextCentered(posStr, centerX, 32.f + 50.f, 18, sf::Color::White);
+        drawTextCentered("LAP " + std::to_string(laps[i]), centerX, 58.f + 50.f, 16, sf::Color(200, 200, 200));
+
+        // Bottom Boxes (Speedometer)
+        sf::RectangleShape botBox(sf::Vector2f(180.f, 60.f));
+        botBox.setPosition(sideX[i], 725.f);
+        botBox.setFillColor(podiumFill);
+        botBox.setOutlineColor(outline);
+        botBox.setOutlineThickness(2.f);
+        window.draw(botBox);
+
+        drawTextCentered(std::to_string(speeds[i]) + " KM/H", centerX, 755.f, 26, sf::Color::White);
+    }
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
+
+    if (pauseButton.contains(mp))
+    {
+        pause.setColor(sf::Color(255, 100, 100)); // Flash red on hover
+    }
+    else
+    {
+        pause.setColor(sf::Color(255, 255, 255, 220)); // Semi-transparent white
+    }
+
+    window.draw(pause);
+}
+
+void Graphics::renderPVPLvlComplete(const Player &player2)
+{
+    window.setView(hudView);
+
+    // 1. Dark overlay
+    sf::RectangleShape overlay(sf::Vector2f(1200.f, 800.f));
+    overlay.setFillColor(sf::Color(0, 0, 0, 220));
+    window.draw(overlay);
+
+    // 2. Results Panel
+    sf::RectangleShape panel(sf::Vector2f(600.f, 400.f));
+    panel.setPosition(300.f, 200.f);
+    panel.setFillColor(sf::Color(20, 5, 8, 240));
+    panel.setOutlineColor(sf::Color(210, 35, 45));
+    panel.setOutlineThickness(3.f);
+    window.draw(panel);
+
+    // 3. Header & Stats
+    drawTextCentered("RACE COMPLETE!", 600.f, 250.f, 40, sf::Color::White);
+
+    drawTextCentered("P1: " + std::to_string(player.getCurrLap() + 1) + " LAPS", 600.f, 320.f, 24, sf::Color(200, 200, 200));
+    drawTextCentered("P2: " + std::to_string(player2.getCurrLap() + 1) + " LAPS", 600.f, 360.f, 24, sf::Color(200, 200, 200));
+
+    // 4. Buttons (Matching your event handler index 0 = REMATCH, 1 = MENU)
+    levelCompleteButtons.clear();
+    std::string labels[] = {"REMATCH", "MENU"};
+
+    for (int i = 0; i < 2; ++i)
+    {
+        // Position buttons matching your handler's expected layout
+        float btnX = 400.f + (i * 250.f);
+        float btnY = 520.f;
+        sf::FloatRect btnRect(btnX, btnY, 200.f, 50.f);
+
+        levelCompleteButtons.push_back(btnRect);
+
+        sf::RectangleShape btn(sf::Vector2f(btnRect.width, btnRect.height));
+        btn.setPosition(btnRect.left, btnRect.top);
+        btn.setFillColor(sf::Color(45, 10, 15, 230));
+        btn.setOutlineColor(sf::Color(110, 30, 35));
+        btn.setOutlineThickness(2.f);
+
+        window.draw(btn);
+        drawTextCentered(labels[i], btnRect.left + btnRect.width / 2.f, btnRect.top + btnRect.height / 2.f, 18, sf::Color::White);
     }
 }

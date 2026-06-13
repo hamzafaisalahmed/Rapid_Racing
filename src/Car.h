@@ -24,7 +24,7 @@ protected:
     std::function<bool(sf::Vector2f, float)> collisionChecker;
     int currWaypointIndex;
     int currLap;
-
+    int racePos;
     float stuckTime;
 
 public:
@@ -81,7 +81,7 @@ public:
             speed = maxReverseSpeed;
     }
 
-    void draw(sf::RenderWindow &window) { window.draw(sprite); }
+    void draw(sf::RenderWindow &window) const { window.draw(sprite); }
 
     sf::Vector2f getPosition() const { return position; }
     void setPosition(sf::Vector2f pos)
@@ -214,6 +214,10 @@ public:
         setCurrSpeed(0.f);
         stuckTime = 0.f;
     }
+    void incrementLaps() { currLap++; }
+
+    int getRacePos() const { return racePos; }
+    void setRacePos(int i) { racePos = i; }
     ~Car() = default;
 };
 class Player : public Car
