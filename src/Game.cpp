@@ -46,6 +46,25 @@ void Game::resetLevel()
         player1.setPosition(sf::Vector2f(1620.f, 2550.f));
         player2.setPosition(sf::Vector2f(1620.f, 2600.f));
     }
+    int activePlayerCount = 0;
+    if (selectedMode == Gamemode::TimeTrial)
+    {
+        activePlayerCount = 1;
+    }
+    else if (selectedMode == Gamemode::PVP)
+    {
+        activePlayerCount = 2;
+    }
+    else if (selectedMode == Gamemode::AI)
+    {
+        activePlayerCount = 2; // player1 + aiCar (or however many)
+    }
+
+    // Set active status
+    for (size_t i = 0; i < cars.size(); ++i)
+    {
+        cars[i]->setActive(i < (size_t)activePlayerCount);
+    }
 }
 
 void Game::init()
@@ -377,6 +396,8 @@ void Game::update(float dt)
             updateRacePositions();
             for (size_t i = 0; i < cars.size(); i++)
             {
+                if (!cars[i]->getActive())
+                    continue;
                 cars[i]->updateStuckTime(dt);
                 checkWinner(cars[i], i + 1);
             }
@@ -451,6 +472,7 @@ void Game::render()
             graphics->renderPVPGameplay(player2);
             graphics->renderPVPHUD(player2, totalLaps, totalRaceTime);
         }
+        graphics->renderMinimap(cars, selectedMode);
     }
     else if (stateStack.top() == GameState::LevelComplete)
     {

@@ -26,6 +26,7 @@ protected:
     int currLap;
     int racePos;
     float stuckTime;
+    bool isActive;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0), stuckTime(0.f) {}
@@ -218,6 +219,8 @@ public:
 
     int getRacePos() const { return racePos; }
     void setRacePos(int i) { racePos = i; }
+    bool getActive() const { return isActive; }
+    void setActive(bool b) { isActive = b; }
     ~Car() = default;
 };
 class Player : public Car

@@ -19,6 +19,10 @@ class Graphics
     sf::Sprite homeBackground;
     sf::Texture homeTexture;
 
+    sf::Texture minimapTexture;
+    sf::Sprite minimapSprite;
+    const float minimapScale = 0.05f;
+
     sf::Sprite pause;
     sf::Texture pauseTexture;
     sf::FloatRect pauseButton;
@@ -55,4 +59,5 @@ public:
     void renderPVPGameplay(const Player &player2);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2);
+    void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
 };

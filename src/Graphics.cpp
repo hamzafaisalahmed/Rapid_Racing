@@ -11,6 +11,12 @@ void Graphics::init()
         throw std::runtime_error("Pause texture not found");
     pause.setTexture(pauseTexture);
 
+    if (!minimapTexture.loadFromFile("assets/textures/track1mini.png"))
+        throw std::runtime_error("Minimap texture not found");
+
+    minimapSprite.setTexture(minimapTexture);
+    minimapSprite.setScale(minimapScale, minimapScale);
+
     pauseButton = sf::FloatRect(1140.f, 15.f, 45.f, 45.f);
     pause.setPosition(pauseButton.left, pauseButton.top);
     float scaleX = pauseButton.width / pauseTexture.getSize().x;
@@ -284,6 +290,9 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
 
 void Graphics::renderGamePlay()
 {
+    // sf::Vector2u trackSize = track.getSize();
+    // gameView.setSize(static_cast<float>(trackSize.x), static_cast<float>(trackSize.y));
+    // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
     sf::Vector2u trackSize = track.getSize();
     sf::Vector2f playerPos = player.getPosition();
     sf::Vector2f viewCenter = playerPos;
@@ -606,5 +615,46 @@ void Graphics::renderPVPLvlComplete(const Player &player2)
 
         window.draw(btn);
         drawTextCentered(labels[i], btnRect.left + btnRect.width / 2.f, btnRect.top + btnRect.height / 2.f, 18, sf::Color::White);
+    }
+}
+
+void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
+{
+    window.setView(hudView);
+
+    float minimapWidth = minimapTexture.getSize().x * minimapScale;
+    float minimapHeight = minimapTexture.getSize().y * minimapScale;
+
+    // Position based on mode
+    float minimapX = (mode == Gamemode::TimeTrial) ? (1200.f - minimapWidth - 10.f) : // Bottom-right for single player
+                         ((1200.f / 2.f) - (minimapWidth / 2.f));                     // Bottom-center for multiplayer
+
+    float minimapY = 800.f - minimapHeight - 10.f;
+    minimapSprite.setPosition(minimapX, minimapY);
+
+    // Background box
+    sf::RectangleShape minimapBox(sf::Vector2f(minimapWidth + 20.f, minimapHeight + 20.f));
+    minimapBox.setPosition(minimapX - 10.f, minimapY - 10.f);
+    minimapBox.setFillColor(sf::Color(20, 5, 8, 220));
+    minimapBox.setOutlineColor(sf::Color(210, 35, 45));
+    minimapBox.setOutlineThickness(2.f);
+    window.draw(minimapBox);
+    window.draw(minimapSprite);
+
+    // Draw cars
+    sf::Color carColors[] = {sf::Color::Cyan, sf::Color::Magenta, sf::Color::Yellow};
+    for (size_t i = 0; i < cars.size(); ++i)
+    {
+        if (!cars[i]->getActive())
+            continue;
+        sf::CircleShape dot(4.f);
+        dot.setFillColor(carColors[i % 3]);
+
+        sf::Vector2f minimapPos = cars[i]->getPosition() * minimapScale;
+        minimapPos.x += minimapX;
+        minimapPos.y += minimapY;
+
+        dot.setPosition(minimapPos);
+        window.draw(dot);
     }
 }
