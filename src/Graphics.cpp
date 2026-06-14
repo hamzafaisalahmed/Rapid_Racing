@@ -319,7 +319,13 @@ void Graphics::renderGamePlay()
     gameView.setCenter(viewCenter);
     window.setView(gameView);
     track.draw(window, sf::VideoMode::getDesktopMode());
-    player.draw(window);
+    if (player.isInvincible())
+    {
+        if ((int)(player.getITime() * 10.f) % 2 != 0)
+            player.draw(window);
+    }
+    else
+        player.draw(window);
     debugPlayDisplay();
 }
 
@@ -525,8 +531,20 @@ void Graphics::renderPVPGameplay(const Player &player2)
 
         // Draw the world for the current viewport
         track.draw(window, sf::VideoMode::getDesktopMode());
-        player.draw(window);
-        player2.draw(window);
+        if (player.isInvincible())
+        {
+            if ((int)(player.getITime() * 10.f) % 2 != 0)
+                player.draw(window);
+        }
+        else
+            player.draw(window);
+        if (player2.isInvincible())
+        {
+            if ((int)(player2.getITime() * 10.f) % 2 != 0)
+                player2.draw(window);
+        }
+        else
+            player2.draw(window);
     }
 }
 

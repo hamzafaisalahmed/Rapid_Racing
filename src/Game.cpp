@@ -390,6 +390,7 @@ void Game::update(float dt)
             totalRaceTime += dt;
             currentLapTime += dt;
             player1.updateStuckTime(dt);
+            player1.updateITime(dt);
             if (player1.updateWaypoint(waypoints))
             {
                 currentLap++;
@@ -421,6 +422,7 @@ void Game::update(float dt)
                 if (!cars[i]->getActive())
                     continue;
                 cars[i]->updateStuckTime(dt);
+                cars[i]->updateITime(dt);
                 checkWinner(cars[i], i + 1);
             }
         }

@@ -27,9 +27,12 @@ protected:
     int racePos;
     float stuckTime;
     bool isActive;
+    const float maxStuckTime = 2.f;
+    float iTime;
+    const float maxITime = 2.f;
 
 public:
-    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0), stuckTime(0.f) {}
+    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0), stuckTime(0.f), iTime(0.f) {}
     void setCollisionFunction(std::function<bool(sf::Vector2f, float)> cc) { collisionChecker = cc; }
     void load(const std::string &dir)
     {
@@ -206,7 +209,7 @@ public:
         else
             stuckTime = 0.f;
     }
-    bool isStuck() const { return stuckTime > 2.f; }
+    bool isStuck() const { return stuckTime > maxStuckTime; }
     void resetPosition(const std::vector<Waypoint> &waypoints)
     {
         if (!isStuck())
@@ -217,6 +220,7 @@ public:
         setPosition(waypoints[index].mid);
         setCurrSpeed(0.f);
         stuckTime = 0.f;
+        setITime();
     }
     void incrementLaps() { currLap++; }
 
@@ -224,6 +228,15 @@ public:
     void setRacePos(int i) { racePos = i; }
     bool getActive() const { return isActive; }
     void setActive(bool b) { isActive = b; }
+
+    void setITime(float duration = 1.f) { iTime = duration; }
+    void updateITime(float dt)
+    {
+        if (iTime > 0.f)
+            iTime -= dt;
+    }
+    float isInvincible() const { return iTime > 0.f; }
+    float getITime() const { return iTime; }
     ~Car() = default;
 };
 class Player : public Car
