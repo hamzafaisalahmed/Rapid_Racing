@@ -5,41 +5,50 @@ void Graphics::init()
     if (!homeTexture.loadFromFile("assets/textures/homescreen.png"))
         throw std::runtime_error("Home background texture not found");
     homeBackground.setTexture(homeTexture);
+    //=====================================================================================
     if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
         throw std::runtime_error("Font not found");
     if (!pauseTexture.loadFromFile("assets/textures/pause.png"))
         throw std::runtime_error("Pause texture not found");
     pause.setTexture(pauseTexture);
-
+    //=====================================================================================
     if (!minimapTexture.loadFromFile("assets/textures/track1mini.png"))
         throw std::runtime_error("Minimap texture not found");
 
     minimapSprite.setTexture(minimapTexture);
     minimapSprite.setScale(minimapScale, minimapScale);
-
+    //=====================================================================================
     pauseButton = sf::FloatRect(1140.f, 15.f, 45.f, 45.f);
     pause.setPosition(pauseButton.left, pauseButton.top);
     float scaleX = pauseButton.width / pauseTexture.getSize().x;
     float scaleY = pauseButton.height / pauseTexture.getSize().y;
     pause.setScale(scaleX, scaleY);
-
+    //=====================================================================================
     timerText.setFont(font);
     timerText.setCharacterSize(16);
     timerText.setFillColor(sf::Color::White);
     timerText.setPosition(10.f, 10.f);
-
+    //=====================================================================================
     lapText.setFont(font);
     lapText.setCharacterSize(20);
     lapText.setFillColor(sf::Color::Red);
     lapText.setPosition(10.f, 30.f);
-
+    //=====================================================================================
     speedometer.setFont(font);
     speedometer.setCharacterSize(35);
     speedometer.setFillColor(sf::Color::White);
     speedometer.setPosition(10.f, 700.f);
-
+    //=====================================================================================
     resetButton = sf::FloatRect(500.f, 650.f, 200.f, 50.f);
 
+    resetButtonPVP.clear();
+
+    // Player 1 Reset
+    resetButtonPVP.push_back(sf::FloatRect(15.f, 660.f, 180.f, 50.f));
+
+    // Player 2 Reset
+    resetButtonPVP.push_back(sf::FloatRect(1005.f, 660.f, 180.f, 50.f));
+    //=====================================================================================
     homeButtons.clear();
     float positionsY[] = {100.f, 275.f, 450.f, 625.f};
     float buttonX = 35.f;
@@ -48,7 +57,7 @@ void Graphics::init()
     {
         homeButtons.push_back(sf::FloatRect(buttonX, positionsY[i], homeBtnSize.x, homeBtnSize.y));
     }
-
+    //=====================================================================================
     pauseButtons.clear();
     float btnWidth = 280.f;
     float btnHeight = 80.f;
@@ -56,7 +65,7 @@ void Graphics::init()
 
     pauseButtons.push_back(sf::FloatRect(centerX, 350.f, btnWidth, btnHeight)); // Continue
     pauseButtons.push_back(sf::FloatRect(centerX, 480.f, btnWidth, btnHeight)); // Exit
-
+    //=====================================================================================
     settingsButtons.clear();
 
     // Define all 9 button positions visually in a single vector
@@ -75,6 +84,7 @@ void Graphics::init()
     {
         settingsButtons.push_back(sf::FloatRect(pos.x, pos.y, homeBtnSize.x, homeBtnSize.y));
     }
+    //=====================================================================================
 }
 void Graphics::drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col)
 {
@@ -367,24 +377,49 @@ void Graphics::debugPlayDisplay()
     }
 }
 
-void Graphics::renderResetButton()
+void Graphics::renderResetButton(Gamemode mode, bool p1, bool p2)
 {
     // Switch to HUD space so it stays fixed on screen
     window.setView(hudView);
 
-    // 1. Draw the background plate using the stored resetButton bounds
-    sf::RectangleShape rect(sf::Vector2f(resetButton.width, resetButton.height));
-    rect.setPosition(resetButton.left, resetButton.top);
-    rect.setFillColor(sf::Color(30, 30, 30, 230)); // Clean dark gray background
-    rect.setOutlineColor(sf::Color::Red);          // Red warning border
-    rect.setOutlineThickness(2.f);
-    window.draw(rect);
+    if (mode != Gamemode::PVP)
+    {
+        // 1. Draw the background plate using the stored resetButton bounds
+        sf::RectangleShape rect(sf::Vector2f(resetButton.width, resetButton.height));
+        rect.setPosition(resetButton.left, resetButton.top);
+        rect.setFillColor(sf::Color(30, 30, 30, 230)); // Clean dark gray background
+        rect.setOutlineColor(sf::Color::Red);          // Red warning border
+        rect.setOutlineThickness(2.f);
+        window.draw(rect);
 
-    // 2. Leverage your existing helper to handle the text creation and centering
-    float centerX = resetButton.left + resetButton.width / 2.f;
-    float centerY = resetButton.top + resetButton.height / 2.f;
+        // 2. Leverage your existing helper to handle the text creation and centering
+        float centerX = resetButton.left + resetButton.width / 2.f;
+        float centerY = resetButton.top + resetButton.height / 2.f;
 
-    drawTextCentered("RESET CAR", centerX, centerY, 20, sf::Color::White);
+        drawTextCentered("RESET CAR (PRESS R)", centerX, centerY, 20, sf::Color::White);
+    }
+    else
+    {
+        bool needsDraw[] = {p1, p2};
+
+        for (size_t i = 0; i < 2; ++i)
+        {
+            if (needsDraw[i] && i < resetButtonPVP.size())
+            {
+                sf::FloatRect rect = resetButtonPVP[i];
+                sf::RectangleShape btn(sf::Vector2f(rect.width, rect.height));
+                btn.setPosition(rect.left, rect.top);
+                btn.setFillColor(sf::Color(30, 30, 30, 230));
+                btn.setOutlineColor(i == 0 ? sf::Color::Cyan : sf::Color::Yellow); // Distinct colors per player
+                btn.setOutlineThickness(2.f);
+                window.draw(btn);
+
+                std::string label = (i == 0) ? "P1 RESET (PRESS R)" : "P2 RESET (PRESS M)";
+                drawTextCentered(label, rect.left + rect.width / 2.f,
+                                 rect.top + rect.height / 2.f, 16, sf::Color::White);
+            }
+        }
+    }
 }
 
 void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted)
@@ -626,8 +661,8 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
     float minimapHeight = minimapTexture.getSize().y * minimapScale;
 
     // Position based on mode
-    float minimapX = (mode == Gamemode::TimeTrial) ? (1200.f - minimapWidth - 10.f) : // Bottom-right for single player
-                         ((1200.f / 2.f) - (minimapWidth / 2.f));                     // Bottom-center for multiplayer
+    float minimapX = (mode == Gamemode::TimeTrial) ? (10.f) :     // Bottom-right for single player
+                         ((1200.f / 2.f) - (minimapWidth / 2.f)); // Bottom-center for multiplayer
 
     float minimapY = 800.f - minimapHeight - 10.f;
     minimapSprite.setPosition(minimapX, minimapY);

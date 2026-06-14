@@ -31,6 +31,7 @@ class Graphics
     std::vector<sf::FloatRect> levelCompleteButtons;
     std::vector<sf::FloatRect> homeButtons;
     std::vector<sf::FloatRect> settingsButtons;
+    std::vector<sf::FloatRect> resetButtonPVP;
     const sf::Vector2f homeBtnSize{240.f, 75.f};
     Track &track;
     Player &player;
@@ -50,10 +51,11 @@ public:
     const std::vector<sf::FloatRect> &getLevelCompleteButtons() const { return levelCompleteButtons; }
     const std::vector<sf::FloatRect> &getPauseScreenButtons() const { return pauseButtons; }
     const std::vector<sf::FloatRect> &getSettingsButtons() const { return settingsButtons; }
+    const std::vector<sf::FloatRect> &getResetButtonsPVP() const { return resetButtonPVP; }
 
     const sf::FloatRect &getPauseButton() const { return pauseButton; }
     const sf::FloatRect &getResetButton() const { return resetButton; }
-    void renderResetButton();
+    void renderResetButton(Gamemode mode, bool p1 = false, bool p2 = false);
     void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
 
     void renderPVPGameplay(const Player &player2);

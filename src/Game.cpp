@@ -20,6 +20,7 @@ void Game::resetLevel()
         car->setMaxReverseSpeed(-100.f);
         car->setAngle(90.f);
         car->setCurrSpeed(0.f);
+        car->resetWaypointIndex();
     }
     winner = 0;
     currentLap = 1;
@@ -239,9 +240,23 @@ void Game::handleEvents()
                     engineAudio.pause();
                 }
 
-                if (player1.isStuck() && graphics->getResetButton().contains(mappedMousePos))
+                if (selectedMode != Gamemode::PVP && player1.isStuck() && graphics->getResetButton().contains(mappedMousePos))
                 {
                     player1.resetPosition(waypoints);
+                }
+                else
+                {
+                    const auto &ResetButtons = graphics->getResetButtonsPVP();
+                    if (player1.isStuck() && ResetButtons[0].contains(mappedMousePos))
+                    {
+                        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+                            std::cout << "YAY";
+                        player1.resetPosition(waypoints);
+                    }
+                    if (player2.isStuck() && ResetButtons[1].contains(mappedMousePos))
+                    {
+                        player2.resetPosition(waypoints);
+                    }
                 }
             }
             else if (stateStack.top() == GameState::Settings)
@@ -276,6 +291,13 @@ void Game::handleEvents()
                 }
             }
         }
+    }
+    if (window.hasFocus())
+    {
+        if (player1.isStuck() && sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+            player1.resetPosition(waypoints);
+        if (selectedMode == Gamemode::PVP && player2.isStuck() && sf::Keyboard::isKeyPressed(sf::Keyboard::M))
+            player2.resetPosition(waypoints);
     }
 }
 void Game::handlePlayerMovement(float dt)
@@ -465,13 +487,15 @@ void Game::render()
             graphics->renderGamePlay();
             graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);
             if (player1.isStuck())
-                graphics->renderResetButton();
+                graphics->renderResetButton(selectedMode);
         }
         else if (selectedMode == Gamemode::PVP)
         {
             graphics->renderPVPGameplay(player2);
             graphics->renderPVPHUD(player2, totalLaps, totalRaceTime);
+            graphics->renderResetButton(selectedMode, player1.isStuck(), player2.isStuck());
         }
+
         graphics->renderMinimap(cars, selectedMode);
     }
     else if (stateStack.top() == GameState::LevelComplete)

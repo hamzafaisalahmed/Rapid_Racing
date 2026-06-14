@@ -196,6 +196,7 @@ public:
         return false;
     }
     int getCurrWaypointIndex() const { return currWaypointIndex; }
+    void resetWaypointIndex() { currWaypointIndex = 0; }
     int getCurrLap() const { return currLap; }
     void setCurrLap(int c) { currLap = c; }
     void updateStuckTime(float dt)
@@ -205,9 +206,11 @@ public:
         else
             stuckTime = 0.f;
     }
-    bool isStuck() const { return stuckTime > 5.f; }
+    bool isStuck() const { return stuckTime > 2.f; }
     void resetPosition(const std::vector<Waypoint> &waypoints)
     {
+        if (!isStuck())
+            return;
         int index = 0;
         if (currWaypointIndex != 0)
             index = currWaypointIndex - 1;
