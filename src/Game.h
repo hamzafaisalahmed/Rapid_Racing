@@ -53,7 +53,8 @@ class Game
 public:
     void init();
     void run();
-    bool checkCollisions(sf::Vector2f pos, float angle);
+    int checkCollisions(Car *car, sf::Vector2f pos, float angle);
+    bool handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
     void update(float dt);
     void render();
     void handleEvents();

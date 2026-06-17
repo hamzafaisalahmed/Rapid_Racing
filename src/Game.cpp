@@ -104,10 +104,10 @@ void Game::init()
     window.setView(gameView);
     graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player1);
     graphics->init();
-    player1.setCollisionFunction([this](sf::Vector2f pos, float angle)
-                                 { return this->checkCollisions(pos, angle); });
-    player2.setCollisionFunction([this](sf::Vector2f pos, float angle)
-                                 { return this->checkCollisions(pos, angle); });
+    player1.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+                                 { return this->handleCollisionResponse(car, pos, angle, oldPos, oldAngle, dt); });
+    player2.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+                                 { return this->handleCollisionResponse(car, pos, angle, oldPos, oldAngle, dt); });
     stateStack.push(GameState::Home);
 }
 
@@ -379,7 +379,6 @@ void Game::handlePlayerMovement(float dt)
         }
     }
 }
-
 void Game::update(float dt)
 {
     if (stateStack.top() == GameState::Playing)
@@ -429,15 +428,104 @@ void Game::update(float dt)
     }
 }
 
-bool Game::checkCollisions(sf::Vector2f pos, float angle)
+int Game::checkCollisions(Car *car, sf::Vector2f pos, float angle)
 {
-    for (auto &corner : player1.getCorners(pos, angle))
-        if (!track.isOnRoad(corner))
-        {
-            return true;
-        }
+    auto corners = car->getCorners(pos, angle);
+    // corners: 0=front-left, 1=front-right, 2=rear-left, 3=rear-right
 
-    return false;
+    bool frontHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[1]);
+    bool rearHit = !track.isOnRoad(corners[2]) && !track.isOnRoad(corners[3]);
+    bool leftHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[2]);
+    bool rightHit = !track.isOnRoad(corners[1]) && !track.isOnRoad(corners[3]);
+
+    if (frontHit)
+        return 4; // Front
+    if (rearHit)
+        return 5; // Rear
+    if (leftHit)
+        return 6; // Left
+    if (rightHit)
+        return 7; // Right
+
+    // Single corner hit
+    for (int i = 0; i < 4; i++)
+        if (!track.isOnRoad(corners[i]))
+            return i;
+
+    return -1;
+}
+
+bool Game::handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+{
+    int index = checkCollisions(car, pos, angle);
+    if (index == -1)
+        return false;
+    float speed = car->getCurrSpeed();
+    float impact = std::abs(speed);
+    // Apply directional spin based on which side/corner hit
+    float spinDirection = 0.f; // Clockwise by default
+    sf::Vector2f pushDir = car->getPerpendicularVector();
+    if (index == 0 || index == 2)
+        spinDirection = 1.0f;
+    if (index == 1 || index == 3) // Right side hits
+    {
+        spinDirection = -1.0f;
+        pushDir *= -1.f;
+    }
+    if (index == 4 || index == 5)
+        pushDir = sf::Vector2f(0.f, 0.f);
+    if (index == 6)
+        pushDir *= -1.f;
+    if (checkCollisions(car, oldPos, oldAngle) == -1)
+    {
+        if (index <= 3)
+        {
+            car->setPosition(oldPos + (pushDir * 2.f));
+        }
+        else if (index >= 6)
+            car->setPosition(oldPos + (pushDir * 2.f));
+    }
+
+    else
+    {
+        bool flag = false;
+        for (int i = 0; i < 5; i++)
+        {
+            sf::Vector2f test = oldPos + ((i + 1) / 5.f) * (pos - oldPos);
+            float testAngle = oldAngle + ((i + 1) / 5.f) * (angle - oldAngle);
+            if (checkCollisions(car, test, testAngle) == -1)
+            {
+                car->setPosition(test);
+                car->setAngle(testAngle);
+                flag = true;
+                break;
+            }
+        }
+        if (!flag)
+        {
+            car->setAngle(oldAngle);
+            car->setCurrSpeed(0.f);
+        }
+    }
+    if (index >= 6)
+        speed *= 0.5f;
+    else if (index <= 3)
+        speed *= 0.2f;
+    else
+        speed *= -0.2f;
+
+    car->setCurrSpeed(speed);
+    float av = impact * spinDirection;
+    car->setAngularVelocity(av);
+    float afterSpin = av * dt;
+    sf::Vector2f newPos = car->getPosition();
+    if (checkCollisions(car, newPos, car->getAngle() + afterSpin) != -1)
+    {
+        car->setAngularVelocity(0.f);
+        car->setPosition(newPos + (pushDir * 2.f));
+        car->setCurrSpeed(0.f);
+    }
+    return true;
 }
 
 void Game::saveLapTime(const LapTime &lt)

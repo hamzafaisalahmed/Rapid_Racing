@@ -20,8 +20,10 @@ protected:
     float maxReverseSpeed;
     float acc;
     float maxTurnSpeed;
+    float angularVelocity = 0.f;
+    float turnAngularVelocity = 0.f;
     const float standardTurnFactor = 500.f;
-    std::function<bool(sf::Vector2f, float)> collisionChecker;
+    std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> collisionChecker;
     int currWaypointIndex;
     int currLap;
     int racePos;
@@ -30,10 +32,11 @@ protected:
     const float maxStuckTime = 2.f;
     float iTime;
     const float maxITime = 2.f;
+    const float maxTurnAngularVelocity = 360.f;
 
 public:
-    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.9f), currWaypointIndex(0), currLap(0), stuckTime(0.f), iTime(0.f) {}
-    void setCollisionFunction(std::function<bool(sf::Vector2f, float)> cc) { collisionChecker = cc; }
+    Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.93f), currWaypointIndex(0), currLap(0), stuckTime(0.f), iTime(0.f) {}
+    void setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc) { collisionChecker = cc; }
     void load(const std::string &dir)
     {
         try
@@ -113,7 +116,7 @@ public:
     void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
     float getMaxReverseSpeed() const { return maxReverseSpeed; }
     float getMaxTurnSpeed() const { return maxTurnSpeed; }
-    float getTurnSpeed() const
+    float getTurnFactor() const
     {
         if (std::abs(speed) < 1.f)
             return 0.f;
@@ -130,7 +133,7 @@ public:
         float angle = getAngle();
         float oldAngle = angle;
         float turnFactor = 0.f;
-        bool dec = false;
+        float targetVolume = 0.f;
         if (xIn == carInput::Left)
         {
             turnFactor = -1.f * standardTurnFactor;
@@ -139,20 +142,20 @@ public:
         {
             turnFactor = standardTurnFactor;
         }
-        angle += turnFactor * getTurnSpeed() * dt;
-
+        addTurnAngularVelocity(turnFactor * getTurnFactor());
+        angle += turnAngularVelocity * dt;
+        turnAngularVelocity *= 0.9f;
         if (yIn == carInput::Up)
         {
             accelerate(dt);
+            targetVolume = std::abs(getCurrSpeed() / getMaxSpeed()) * 100.f;
         }
         else if (yIn == carInput::Down)
         {
             decelerate(dt);
-            dec = true;
         }
         else
         {
-            dec = true;
             if (std::abs(getCurrSpeed()) < 10.f)
                 setCurrSpeed(0.f);
             else if (std::abs(getCurrSpeed()) < 60.f)
@@ -165,23 +168,17 @@ public:
         sf::Vector2f position = getPosition();
         position.x += std::cos((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
         position.y += std::sin((angle - 90.f) * (3.14159f / 180.f)) * speed * dt;
-        if (collisionChecker(position, angle))
-        {
-            setPosition(oldPosition);
-            setCurrSpeed(speed * -0.3f);
-            setAngle(oldAngle);
-        }
-        else
+        if (!collisionChecker(this, position, angle, oldPosition, oldAngle, dt))
         {
             setPosition(position);
             setCurrSpeed(speed);
-            setAngle(lerp(oldAngle, angle, 0.6f));
         }
-        float targetVolume = 0;
-        if (dec)
-            targetVolume = 0;
-        else
-            targetVolume = std::abs(getCurrSpeed() / getMaxSpeed()) * 100.f;
+
+        angle += angularVelocity * dt;
+        angularVelocity *= 0.95;
+        if (std::abs(angularVelocity) < 1.f)
+            angularVelocity = 0.f;
+        setAngle(lerp(oldAngle, angle, 0.6f));
         return targetVolume;
     }
 
@@ -237,6 +234,21 @@ public:
     }
     float isInvincible() const { return iTime > 0.f; }
     float getITime() const { return iTime; }
+
+    void setAngularVelocity(float a) { angularVelocity = a; }
+    float getAngularVelocity() const { return angularVelocity; }
+    void addTurnAngularVelocity(float a) { turnAngularVelocity = clamp(a, -maxTurnAngularVelocity, maxTurnAngularVelocity); }
+
+    sf::Vector2f getDirectionVector() const
+    {
+        float rad = (angle - 90) * (3.14159f / 180.f);
+        return sf::Vector2f(std::cos(rad), std::sin(rad));
+    }
+    sf::Vector2f getPerpendicularVector() const
+    {
+        sf::Vector2f dir = getDirectionVector();
+        return sf::Vector2f(-dir.y, dir.x);
+    }
     ~Car() = default;
 };
 class Player : public Car
