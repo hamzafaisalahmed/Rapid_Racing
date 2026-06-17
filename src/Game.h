@@ -53,8 +53,12 @@ class Game
 public:
     void init();
     void run();
-    int checkCollisions(Car *car, sf::Vector2f pos, float angle);
-    bool handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
+    int checkWallCollisions(Car *car, sf::Vector2f pos, float angle);
+    impactCarryover handleCollisionResponse(int index, Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
+    CarCollisionResult checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle);
+
+    bool CollisionHandler(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
+
     void update(float dt);
     void render();
     void handleEvents();
@@ -65,6 +69,7 @@ public:
     std::vector<LapTime> loadLapTimes();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
+    float distancePointToSegment(sf::Vector2f p, sf::Vector2f a, sf::Vector2f b);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };

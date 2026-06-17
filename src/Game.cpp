@@ -105,9 +105,9 @@ void Game::init()
     graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player1);
     graphics->init();
     player1.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
-                                 { return this->handleCollisionResponse(car, pos, angle, oldPos, oldAngle, dt); });
+                                 { return this->CollisionHandler(car, pos, angle, oldPos, oldAngle, dt); });
     player2.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
-                                 { return this->handleCollisionResponse(car, pos, angle, oldPos, oldAngle, dt); });
+                                 { return this->CollisionHandler(car, pos, angle, oldPos, oldAngle, dt); });
     stateStack.push(GameState::Home);
 }
 
@@ -428,13 +428,146 @@ void Game::update(float dt)
     }
 }
 
-int Game::checkCollisions(Car *car, sf::Vector2f pos, float angle)
+// CarCollisionResult Game::checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle)
+// {
+//     CarCollisionResult result;
+//     auto corners1 = car1->getCorners(pos, angle);
+//     auto corners2 = car2->getCorners();
+
+//     std::vector<int> hitCar1;
+//     std::vector<int> hitCar2;
+//     float touchThreshold = 2.f;
+//     for (int i = 0; i < 4; i++)
+//     {
+//         for (int j = 0; j < 4; j++)
+//         {
+//             float sqDist = distance(corners1[i], corners2[j]);
+//             if (sqDist < (touchThreshold * touchThreshold))
+//             {
+//                 hitCar1.push_back(i);
+//                 hitCar2.push_back(j);
+//             }
+//         }
+//     }
+//     if (hitCar1.empty())
+//     {
+//         result.hit = false;
+//         return result;
+//     }
+//     result.hit = true;
+//     auto getCollisionIndex = [](const std::vector<int> &corners) -> int
+//     {
+//         if (corners.size() == 1)
+//         {
+//             return corners[0]; // Single corner: 0,1,2,3
+//         }
+//         else if (corners.size() == 2)
+//         {
+//             // Two corners = a side
+//             int a = corners[0];
+//             int b = corners[1];
+
+//             if ((a == 0 && b == 1) || (a == 1 && b == 0))
+//                 return 4; // Front
+//             if ((a == 2 && b == 3) || (a == 3 && b == 2))
+//                 return 5; // Rear
+//             if ((a == 0 && b == 2) || (a == 2 && b == 0))
+//                 return 6; // Left
+//             if ((a == 1 && b == 3) || (a == 3 && b == 1))
+//                 return 7; // Right
+//         }
+//         return -1;
+//     };
+
+//     result.car1Index = getCollisionIndex(hitCar1);
+//     result.car2Index = getCollisionIndex(hitCar2);
+
+//     return result;
+// }
+CarCollisionResult Game::checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle)
+{
+    CarCollisionResult result;
+    auto corners1 = car1->getCorners(pos, angle);
+    auto corners2 = car2->getCorners();
+
+    float touchThreshold = 5.f;
+    int hitCornerIndex = -1;
+    float closestDist = touchThreshold * touchThreshold;
+
+    // Check each corner of car1 against each edge of car2
+    for (int i = 0; i < 4; i++)
+    {
+        // Define edges: 0-1 (front), 2-3 (rear), 0-2 (left), 1-3 (right)
+        std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
+
+        for (auto &edge : edges)
+        {
+            sf::Vector2f p1 = corners2[edge.first];
+            sf::Vector2f p2 = corners2[edge.second];
+
+            // Distance from corner to line segment
+            float dist = distancePointToSegment(corners1[i], p1, p2);
+
+            if (dist < closestDist)
+            {
+                closestDist = dist;
+                hitCornerIndex = i;
+                cout << "Car: " << car2->getCurrSpeed() << endl;
+                // Determine collision side based on which edge
+                if (edge == std::pair<int, int>{0, 1})
+                {
+                    result.car2Index = 5; // rear
+                    cout << "rear\n";
+                }
+                else if (edge == std::pair<int, int>{2, 3})
+                {
+                    result.car2Index = 4; // front
+                    cout << "front\n";
+                }
+                else if (edge == std::pair<int, int>{0, 2})
+                {
+                    result.car2Index = 6;
+                    cout << "Left\n";
+                }
+                // Left
+                else if (edge == std::pair<int, int>{1, 3})
+                {
+                    result.car2Index = 7; // Right
+                    cout << "Right\n";
+                }
+            }
+        }
+    }
+
+    if (hitCornerIndex == -1)
+    {
+        result.hit = false;
+        return result;
+    }
+
+    result.hit = true;
+    result.car1Index = hitCornerIndex;
+    return result;
+}
+float Game::distancePointToSegment(sf::Vector2f p, sf::Vector2f a, sf::Vector2f b)
+{
+    float dx = b.x - a.x;
+    float dy = b.y - a.y;
+    float t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy);
+    t = std::max(0.f, std::min(1.f, t));
+
+    sf::Vector2f closest(a.x + t * dx, a.y + t * dy);
+    float distx = p.x - closest.x;
+    float disty = p.y - closest.y;
+    return distx * distx + disty * disty;
+}
+int Game::checkWallCollisions(Car *car, sf::Vector2f pos, float angle)
 {
     auto corners = car->getCorners(pos, angle);
     // corners: 0=front-left, 1=front-right, 2=rear-left, 3=rear-right
 
-    bool frontHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[1]);
-    bool rearHit = !track.isOnRoad(corners[2]) && !track.isOnRoad(corners[3]);
+    bool rearHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[1]);
+    bool frontHit = !track.isOnRoad(corners[2]) && !track.isOnRoad(corners[3]);
     bool leftHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[2]);
     bool rightHit = !track.isOnRoad(corners[1]) && !track.isOnRoad(corners[3]);
 
@@ -455,35 +588,46 @@ int Game::checkCollisions(Car *car, sf::Vector2f pos, float angle)
     return -1;
 }
 
-bool Game::handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+impactCarryover Game::handleCollisionResponse(int index, Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
 {
-    int index = checkCollisions(car, pos, angle);
+    impactCarryover returnValue;
     if (index == -1)
-        return false;
+        return returnValue;
+
     float speed = car->getCurrSpeed();
     float impact = std::abs(speed);
     // Apply directional spin based on which side/corner hit
     float spinDirection = 0.f; // Clockwise by default
     sf::Vector2f pushDir = car->getPerpendicularVector();
-    if (index == 0 || index == 2)
+    if (index == 2)
         spinDirection = 1.0f;
-    if (index == 1 || index == 3) // Right side hits
+    if (index == 3) // Right side hits
     {
         spinDirection = -1.0f;
         pushDir *= -1.f;
     }
+    if (index == 1)
+    {
+        spinDirection = 1.0f;
+        pushDir *= -1.f;
+    }
+    if (index == 0) // Right side hits
+    {
+        spinDirection = -1.0f;
+    }
+
     if (index == 4 || index == 5)
-        pushDir = sf::Vector2f(0.f, 0.f);
+        pushDir = car->getDirectionVector();
     if (index == 6)
         pushDir *= -1.f;
-    if (checkCollisions(car, oldPos, oldAngle) == -1)
+    if (checkWallCollisions(car, oldPos, oldAngle) == -1)
     {
         if (index <= 3)
         {
-            car->setPosition(oldPos + (pushDir * 2.f));
+            returnValue.pos = (pushDir * 2.f);
         }
         else if (index >= 6)
-            car->setPosition(oldPos + (pushDir * 2.f));
+            returnValue.pos = (pushDir * 2.f);
     }
 
     else
@@ -493,9 +637,9 @@ bool Game::handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::
         {
             sf::Vector2f test = oldPos + ((i + 1) / 5.f) * (pos - oldPos);
             float testAngle = oldAngle + ((i + 1) / 5.f) * (angle - oldAngle);
-            if (checkCollisions(car, test, testAngle) == -1)
+            if (checkWallCollisions(car, test, testAngle) == -1)
             {
-                car->setPosition(test);
+                returnValue.pos = ((i + 1) / 5.f) * (pos - oldPos);
                 car->setAngle(testAngle);
                 flag = true;
                 break;
@@ -514,18 +658,57 @@ bool Game::handleCollisionResponse(Car *car, sf::Vector2f pos, float angle, sf::
     else
         speed *= -0.2f;
 
-    car->setCurrSpeed(speed);
+    returnValue.speed = speed;
     float av = impact * spinDirection;
-    car->setAngularVelocity(av);
+    returnValue.angularVelocity = av;
     float afterSpin = av * dt;
-    sf::Vector2f newPos = car->getPosition();
-    if (checkCollisions(car, newPos, car->getAngle() + afterSpin) != -1)
+    if (checkWallCollisions(car, oldPos + returnValue.pos, car->getAngle() + afterSpin) != -1)
     {
-        car->setAngularVelocity(0.f);
-        car->setPosition(newPos + (pushDir * 2.f));
-        car->setCurrSpeed(0.f);
+        returnValue.angularVelocity = 0.f;
+        returnValue.pos = pushDir * 2.f;
+        returnValue.speed = 0.f;
     }
-    return true;
+    return returnValue;
+}
+
+bool Game::CollisionHandler(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+{
+    std::vector<float> preCol{car->getCurrSpeed(), car->getAngle(), car->getAngularVelocity()};
+    bool flag = false;
+    int index = checkWallCollisions(car, pos, angle);
+    if (index != -1)
+    {
+        impactCarryover result = handleCollisionResponse(index, car, pos, angle, oldPos, oldAngle, dt);
+        car->setCurrSpeed(result.speed);
+        car->setAngle(result.angle);
+        car->setAngularVelocity(result.angularVelocity);
+        car->setPosition(oldPos + result.pos);
+        flag = true;
+    }
+
+    for (auto other : cars)
+    {
+        if (other == car || !other->getActive() || other->isInvincible())
+            continue;
+        CarCollisionResult result = checkCarCollisions(car, other, pos, angle);
+        if (result.hit)
+        {
+            flag = true;
+            impactCarryover collResult = handleCollisionResponse(result.car1Index, car, pos, angle, oldPos, oldAngle, dt);
+            car->setCurrSpeed(collResult.speed);
+            car->setAngle(collResult.angle);
+            car->setAngularVelocity(collResult.angularVelocity);
+            car->setPosition(oldPos + collResult.pos);
+
+            collResult.speed *= -0.5;
+            collResult.angularVelocity *= -0.7;
+            collResult.index = result.car2Index;
+            // collResult.pos += pos;
+            other->setCollisionCarryover(collResult);
+            other->setPosition(other->getPosition() - collResult.pos);
+        }
+    }
+    return flag;
 }
 
 void Game::saveLapTime(const LapTime &lt)

@@ -83,3 +83,19 @@ inline std::string formatRaceTime(float secondsTotal)
            (seconds < 10 ? "0" : "") + std::to_string(seconds) + "." +
            (millis < 10 ? "0" : "") + std::to_string(millis);
 }
+
+struct CarCollisionResult
+{
+    bool hit = false;
+    int car1Index = -1; // Which side of car1 hit
+    int car2Index = -1; // Which side of car2 hit
+};
+
+struct impactCarryover
+{
+    sf::Vector2f pos;
+    float speed = 0;
+    float angle = 0;
+    float angularVelocity = 0;
+    int index = -1;
+};

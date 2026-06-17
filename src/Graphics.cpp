@@ -326,7 +326,7 @@ void Graphics::renderGamePlay()
     }
     else
         player.draw(window);
-    debugPlayDisplay();
+    debugPlayDisplay(&player);
 }
 
 void Graphics::renderPauseScreen()
@@ -360,13 +360,15 @@ void Graphics::renderPauseScreen()
     }
 }
 
-void Graphics::debugPlayDisplay()
+void Graphics::debugPlayDisplay(Car *car)
 {
-    for (auto &corner : player.getCorners(player.getPosition(), player.getAngle()))
+    sf::Color colors[]{sf::Color::Red, sf::Color::Yellow, sf::Color::Blue, sf::Color::Green};
+    auto corners = car->getCorners(car->getPosition(), car->getAngle());
+    for (int i = 0; i < 4; i++)
     {
         sf::CircleShape dot(1.f);
-        dot.setFillColor(sf::Color::Red);
-        dot.setPosition(corner.x - 1.f, corner.y - 1.f);
+        dot.setFillColor(colors[i]);
+        dot.setPosition(corners[i].x - 1.f, corners[i].y - 1.f);
         window.draw(dot);
     }
     std::vector<Waypoint> waypoints = track.getWaypoints();
@@ -492,7 +494,7 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
     }
 }
 
-void Graphics::renderPVPGameplay(const Player &player2)
+void Graphics::renderPVPGameplay(Player &player2)
 {
     sf::Vector2u trackSize = track.getSize();
 
@@ -546,6 +548,8 @@ void Graphics::renderPVPGameplay(const Player &player2)
         else
             player2.draw(window);
     }
+    debugPlayDisplay(&player);
+    debugPlayDisplay(&player2);
 }
 
 void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime)
