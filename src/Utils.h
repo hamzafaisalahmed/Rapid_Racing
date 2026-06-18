@@ -94,6 +94,7 @@ struct CarCollisionResult
 struct impactCarryover
 {
     sf::Vector2f pos;
+    sf::Vector2f dir;
     float speed = 0;
     float angle = 0;
     float angularVelocity = 0;

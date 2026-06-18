@@ -11,6 +11,7 @@
 #include "Car.h"
 #include "Utils.h"
 #include "Graphics.h"
+#include "CollisionHandler.h"
 
 class Game
 {
@@ -39,6 +40,7 @@ class Game
     sf::Music endscreen;
 
     std::unique_ptr<Graphics> graphics;
+    std::unique_ptr<CollisionHandler> collisionHandler;
 
     int selectedLaps;
     int selectedCarLvl;
@@ -53,11 +55,6 @@ class Game
 public:
     void init();
     void run();
-    int checkWallCollisions(Car *car, sf::Vector2f pos, float angle);
-    impactCarryover handleCollisionResponse(int index, Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
-    CarCollisionResult checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle);
-
-    bool CollisionHandler(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
 
     void update(float dt);
     void render();

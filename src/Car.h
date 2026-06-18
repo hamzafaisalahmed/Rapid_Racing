@@ -70,10 +70,10 @@ public:
 
         sf::FloatRect bounds = sprite.getLocalBounds();
         float w = (bounds.width * sprite.getScale().x) / 2.2f;
-        float hf = (bounds.height * sprite.getScale().y) * 0.3f;
-        float hr = (bounds.height * sprite.getScale().y) * 0.6f; // might have to make custom for all cars
+        float hr = (bounds.height * sprite.getScale().y) * 0.3f;
+        float hf = (bounds.height * sprite.getScale().y) * 0.6f; // might have to make custom for all cars
         return {
-            t.transformPoint(-w, hf), t.transformPoint(w, hf), t.transformPoint(-w, -hr), t.transformPoint(w, -hr)};
+            t.transformPoint(-w, -hf), t.transformPoint(w, -hf), t.transformPoint(-w, hr), t.transformPoint(w, hr)};
     }
     std::vector<sf::Vector2f> getCorners()
     {
@@ -144,7 +144,6 @@ public:
     }
     float handleMovement(float dt, carInput xIn, carInput yIn, float friction)
     {
-        handleCollisionCarryover();
         sf::Vector2f oldPosition = getPosition();
         float angle = getAngle();
         float oldAngle = angle;
@@ -232,6 +231,7 @@ public:
             index = currWaypointIndex - 1;
         setPosition(waypoints[index].mid);
         setCurrSpeed(0.f);
+        setAngularVelocity(0.f);
         stuckTime = 0.f;
         setITime();
     }
