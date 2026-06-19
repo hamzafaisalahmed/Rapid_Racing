@@ -1,14 +1,9 @@
 #include "Game.h"
-#include "Utils.h"
-#include "Graphics.h"
-#include "CollisionHandler.h"
 #include <algorithm>
 #include <cmath>
-#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <ctime>
 #include <stdexcept>
-#include <fstream>
 #include <functional>
 
 void Game::resetLevel()
@@ -67,6 +62,7 @@ void Game::resetLevel()
     {
         cars[i]->setActive(i < (size_t)activePlayerCount);
     }
+    lapData = LapTime();
 }
 
 void Game::init()
@@ -139,8 +135,6 @@ void Game::handleEvents()
     {
         if (event.type == sf::Event::Closed)
         {
-            if (lapData.laps == totalLaps)
-                saveLapTime(lapData);
             engineAudio.stop();
             endscreen.stop();
             window.close();
@@ -185,18 +179,11 @@ void Game::handleEvents()
                 std::vector<sf::FloatRect> levelCompleteButtons = graphics->getLevelCompleteButtons();
                 if (levelCompleteButtons[0].contains(mousePos))
                 {
-                    if (selectedMode == Gamemode::TimeTrial)
-                    {
-                        saveLapTime(lapData);
-                        lapData = LapTime();
-                    }
                     resetLevel();
                     stateStack.pop();
                 }
                 else if (levelCompleteButtons[1].contains(mousePos))
                 {
-                    if (selectedMode == Gamemode::TimeTrial)
-                        saveLapTime(lapData);
                     engineAudio.stop();
                     endscreen.stop();
                     while (stateStack.size() > 0)
@@ -385,7 +372,7 @@ void Game::update(float dt)
 {
     if (stateStack.top() == GameState::Playing)
     {
-        if (selectedMode == Gamemode::AI || selectedMode == Gamemode::TimeTrial)
+        if (selectedMode == Gamemode::TimeTrial)
         {
             handlePlayerMovement(dt);
             totalRaceTime += dt;
@@ -409,11 +396,15 @@ void Game::update(float dt)
                 {
                     engineAudio.pause();
                     endscreen.play();
+                    leaderboardManager.saveLapTime(lapData);
                     stateStack.push(GameState::LevelComplete);
                 }
             }
         }
-        else if (selectedMode == Gamemode::PVP)
+        else // Sort cars to process trailing vehicles first (natural chain reaction logic)
+            std::sort(cars.begin(), cars.end(), [](Car *a, Car *b)
+                      { return a->getRacePos() > b->getRacePos(); });
+        if (selectedMode == Gamemode::PVP)
         {
             handlePlayerMovement(dt);
             totalRaceTime += dt;
@@ -428,31 +419,6 @@ void Game::update(float dt)
             }
         }
     }
-}
-
-void Game::saveLapTime(const LapTime &lt)
-{
-    std::ofstream file("scores.txt", std::ios::app);
-    if (file.is_open())
-    {
-        file << lt.id << " " << lt.laps << " "
-             << lt.bestLap << " " << lt.totalTime << "\n";
-        file.close();
-    }
-}
-
-std::vector<LapTime> Game::loadLapTimes()
-{
-    std::vector<LapTime> times;
-    std::ifstream file("scores.txt");
-    if (file.is_open())
-    {
-        LapTime lt;
-        while (file >> lt.id >> lt.laps >> lt.bestLap >> lt.totalTime)
-            times.push_back(lt);
-        file.close();
-    }
-    return times;
 }
 
 bool Game::carPosition(const Car &a, const Car &b)
@@ -493,7 +459,7 @@ void Game::render()
     else if (stateStack.top() == GameState::LevelComplete)
     {
         if (selectedMode == Gamemode::TimeTrial)
-            graphics->renderLevelComplete(lapData, loadLapTimes());
+            graphics->renderLevelComplete(lapData, leaderboardManager.loadLapTimes());
         else if (selectedMode == Gamemode::PVP)
         {
             graphics->renderPVPLvlComplete(player2);

@@ -2,11 +2,10 @@
 #include <algorithm>
 #include <cmath>
 
-// Explicit structure setup assuming your collision detection passes down an info/result object
-// struct CollisionResult { int car1Index; int car2Index; };
-
-void resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
+void CollisionHandler::resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
 {
+
+    // SAT
     auto corners1 = car1->getCorners(pos1, car1->getAngle());
     auto corners2 = car2->getCorners(car2->getPosition(), car2->getAngle());
 
@@ -26,7 +25,7 @@ void resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
     {
         // Normalize the axis
         float len = std::sqrt(axes[i].x * axes[i].x + axes[i].y * axes[i].y);
-        if (len < 0.001f)
+        if (len < degenAxisThreshold)
             continue;
         sf::Vector2f axis = axes[i] / len;
 
@@ -74,7 +73,7 @@ void resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
     }
 
     // 4. Push them apart symmetrically along the clean translation axis
-    sf::Vector2f separation = translationAxis * (minOverlap * 0.51f);
+    sf::Vector2f separation = translationAxis * (minOverlap * overlapPushFactor);
 
     pos1 += separation;
     car1->setPosition(pos1);
@@ -103,11 +102,6 @@ bool CollisionHandler::handleCollision(Car *car, sf::Vector2f pos, float angle, 
         car->setPosition(pos);
         flag = true;
     }
-
-    // Sort cars to process trailing vehicles first (natural chain reaction logic)
-    std::sort(cars.begin(), cars.end(), [](Car *a, Car *b)
-              { return a->getRacePos() > b->getRacePos(); });
-
     // 2. VEHICLE TO VEHICLE COLLISIONS
     for (auto other : cars)
     {
@@ -132,7 +126,6 @@ CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf
     auto corners1 = car1->getCorners(pos, angle);
     auto corners2 = car2->getCorners();
 
-    float touchThreshold = 5.f; // Slightly generous threshold to capture close overlaps
     int hitCornerIndex = -1;
     float closestDist = touchThreshold * touchThreshold;
 
@@ -219,21 +212,21 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
 
     if (index == 3)
     {
-        spinDirection = 1.0f;
+        spinDirection = rightSpin;
         pushDir *= -1.f;
     }
     else if (index == 2)
     {
-        spinDirection = -1.0f;
+        spinDirection = leftSpin;
     }
     else if (index == 1)
     {
-        spinDirection = -1.0f;
+        spinDirection = leftSpin;
         pushDir *= -1.f;
     }
     else if (index == 0)
     {
-        spinDirection = 1.0f;
+        spinDirection = rightSpin;
     }
     else if (index == 4 || index == 5)
     {
@@ -253,20 +246,20 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
     }
     else
     {
-        bool flag = false;
-        for (int i = 0; i < 5; i++)
-        {
-            sf::Vector2f test = oldPos + ((i + 1) / 5.f) * (pos - oldPos);
-            float testAngle = oldAngle + ((i + 1) / 5.f) * (angle - oldAngle);
-            if (checkWallCollisions(car, test, testAngle) == -1)
-            {
-                returnValue.pos = ((i + 1) / 5.f) * (pos - oldPos);
-                car->setAngle(testAngle);
-                flag = true;
-                break;
-            }
-        }
-        if (!flag)
+        // bool flag = false;
+        // for (int i = 0; i < tunnelingChecks; i++)
+        // {
+        //     sf::Vector2f test = oldPos + ((i + 1) / float(tunnelingChecks)) * (pos - oldPos);
+        //     float testAngle = oldAngle + ((i + 1) / float(tunnelingChecks)) * (angle - oldAngle);
+        //     if (checkWallCollisions(car, test, testAngle) == -1)
+        //     {
+        //         returnValue.pos = ((i + 1) / 5.f) * (pos - oldPos);
+        //         car->setAngle(testAngle);
+        //         flag = true;
+        //         break;
+        //     }
+        // }
+        // if (!flag)
         {
             car->setAngle(oldAngle);
             car->setCurrSpeed(0.f);
@@ -274,9 +267,9 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
     }
 
     if (index >= 6 || index <= 3)
-        speed *= 0.5f;
+        speed *= sideCollisionDamping;
     else if (index == 4 || index == 5)
-        speed *= -0.7f;
+        speed *= headCollisionDamping;
 
     returnValue.dir = car->getDirectionVector();
     returnValue.speed = speed;
@@ -286,7 +279,7 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
     if (checkWallCollisions(car, oldPos + returnValue.pos, car->getAngle() + afterSpin) != -1)
     {
         returnValue.angularVelocity = 0.f;
-        returnValue.pos = pushDir * 2.f;
+        returnValue.pos = pushDir * wallPushMultiplier;
         returnValue.speed = 0.f;
     }
     return returnValue;
@@ -299,7 +292,7 @@ void CollisionHandler::applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *c
 
     sf::Vector2f delta = p1 - p2;
     float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
-    if (dist < 0.0001f)
+    if (dist < minThreshold)
         return;
 
     sf::Vector2f normal(delta.x / dist, delta.y / dist);
@@ -309,7 +302,7 @@ void CollisionHandler::applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *c
 
     float velocityAlongNormal = (relativeVelocity.x * normal.x) + (relativeVelocity.y * normal.y);
 
-    float restitution = 0.35f;
+    float restitution = baseRestitution;
     if (std::abs(velocityAlongNormal) < 15.f)
     {
         restitution = 0.0f;
@@ -318,7 +311,7 @@ void CollisionHandler::applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *c
     if (velocityAlongNormal < 0)
     {
         float j = -(1.0f + restitution) * velocityAlongNormal;
-        j /= 2.0f;
+        j /= 2.0f; // assuming all cars have equal mass
 
         sf::Vector2f impulse(normal.x * j, normal.y * j);
         sf::Vector2f newV1 = v1 + impulse;
@@ -344,10 +337,8 @@ void CollisionHandler::applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *c
         float torque1 = (r1.x * impulse.y) - (r1.y * impulse.x);
         float torque2 = (r2.x * -impulse.y) - (r2.y * -impulse.x);
 
-        // 4. Commit angular velocities scaled by a tuning factor (0.1f balances out high velocities)
-        float angularInertiaScalar = 0.5f;
-        car1->setAngularVelocity(car1->getAngularVelocity() + torque1 * angularInertiaScalar);
-        car2->setAngularVelocity(car2->getAngularVelocity() + torque2 * angularInertiaScalar);
+        car1->setAngularVelocity(car1->getAngularVelocity() + torque1 * torqueTurnFactor);
+        car2->setAngularVelocity(car2->getAngularVelocity() + torque2 * torqueTurnFactor);
     }
 
     // ================================================
@@ -361,7 +352,7 @@ float CollisionHandler::distancePointToSegment(sf::Vector2f p, sf::Vector2f a, s
     float dy = b.y - a.y;
     float lengthSquared = dx * dx + dy * dy;
 
-    if (lengthSquared < 0.0001f)
+    if (lengthSquared < minThreshold)
     {
         float distx = p.x - a.x;
         float disty = p.y - a.y;

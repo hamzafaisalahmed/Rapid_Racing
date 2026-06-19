@@ -12,12 +12,14 @@
 #include "Utils.h"
 #include "Graphics.h"
 #include "CollisionHandler.h"
+#include "Leaderboard.h"
 
 class Game
 {
     float dt;
     int score;
 
+    Leaderboard leaderboardManager;
     std::stack<GameState> stateStack;
     sf::RenderWindow window;
     sf::View gameView;
@@ -62,11 +64,8 @@ public:
     void handlePlayerMovement(float dt);
     void resetLevel();
     void checkWinner(Car *player, int playerNo);
-    void saveLapTime(const LapTime &lt);
-    std::vector<LapTime> loadLapTimes();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
-    float distancePointToSegment(sf::Vector2f p, sf::Vector2f a, sf::Vector2f b);
     Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };
