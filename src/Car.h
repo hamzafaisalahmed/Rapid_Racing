@@ -4,8 +4,12 @@
 #include <vector>
 #include <string>
 #include "Utils.h"
+#include "AIController.h"
 #include <functional>
 #include <cmath>
+#include <memory>
+
+class AIController;
 
 class Car
 {
@@ -14,6 +18,7 @@ protected:
     sf::Sprite sprite;
 
     sf::Vector2f position;
+    sf::Vector2f dimensions;
     float angle;
     float speed;
     float maxSpeed;
@@ -33,7 +38,6 @@ protected:
     float iTime;
     const float maxITime = 2.f;
     const float maxTurnAngularVelocity = 360.f;
-    std::vector<impactCarryover> collisionCarryoverVector;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac) : position(xp, yp), angle(a), speed(s), maxSpeed(ms), maxReverseSpeed(mrs), acc(ac), maxTurnSpeed(ms * 0.93f), currWaypointIndex(0), currLap(0), stuckTime(0.f), iTime(0.f) {}
@@ -52,6 +56,9 @@ public:
                 sprite.setScale(0.08f, 0.08f);
                 sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y * 0.65f);
                 sprite.setPosition(position);
+                dimensions = sf::Vector2f(
+                    texture.getSize().x * 0.08f,
+                    texture.getSize().y * 0.08f);
             }
         }
         catch (const std::runtime_error &e)
@@ -60,6 +67,8 @@ public:
             throw;
         }
     }
+
+    sf::Vector2f getDimensions() const { return dimensions; }
 
     std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle)
     {
@@ -254,37 +263,6 @@ public:
     void setAngularVelocity(float a) { angularVelocity = a; }
     float getAngularVelocity() const { return angularVelocity; }
     void addTurnAngularVelocity(float a) { turnAngularVelocity = clamp(a, -maxTurnAngularVelocity, maxTurnAngularVelocity); }
-    void setCollisionCarryover(impactCarryover c) { collisionCarryoverVector.push_back(c); }
-    void handleCollisionCarryover()
-    {
-        if (collisionCarryoverVector.empty())
-            return;
-        for (auto &collisionCarryover : collisionCarryoverVector)
-        {
-            speed += collisionCarryover.speed;
-            angle += collisionCarryover.angle;
-            angularVelocity += collisionCarryover.angularVelocity;
-            collisionCarryover.speed = collisionCarryover.angle = collisionCarryover.angularVelocity = 0;
-            if (collisionCarryover.index != -1)
-            {
-                float spinDirection = 0.f;
-
-                if (collisionCarryover.index == 0 || collisionCarryover.index == 2) // Left corners
-                    spinDirection = 1.0f;
-                else if (collisionCarryover.index == 1 || collisionCarryover.index == 3) // Right corners
-                    spinDirection = -1.0f;
-                else if (collisionCarryover.index == 6) // Left side
-                    spinDirection = 1.0f;
-                else if (collisionCarryover.index == 7) // Right side
-                    spinDirection = -1.0f;
-                // 4, 5 (front/rear) = 0 spin
-
-                // Amplify spin based on index
-                angularVelocity += std::abs(speed) * spinDirection * 0.3f;
-            }
-        }
-        collisionCarryoverVector.clear();
-    }
     sf::Vector2f getDirectionVector() const
     {
         float rad = (angle - 90) * (3.14159f / 180.f);
@@ -309,5 +287,9 @@ public:
 class AI : public Car
 {
 public:
+    std::unique_ptr<AIController> aiController;
+
+    TargetSide targetSide = TargetSide::Mid;
     AI(float xp, float yp, float a, float s, float ms, float mrs, float ac) : Car(xp, yp, a, s, ms, mrs, ac) {}
+    AI() : Car(0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f) {}
 };

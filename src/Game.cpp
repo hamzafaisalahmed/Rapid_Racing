@@ -5,6 +5,7 @@
 #include <ctime>
 #include <stdexcept>
 #include <functional>
+#include "AIController.h"
 
 void Game::resetLevel()
 {
@@ -43,24 +44,51 @@ void Game::resetLevel()
         player1.setPosition(sf::Vector2f(1620.f, 2550.f));
         player2.setPosition(sf::Vector2f(1620.f, 2600.f));
     }
-    int activePlayerCount = 0;
+    else if (selectedMode == Gamemode::AI)
+    {
+        player1.setPosition(sf::Vector2f(1620.f, 2550.f));
+        ai1.setPosition(sf::Vector2f(1620.f, 2600.f));
+    }
+    // int activePlayerCount = 0;
+    // if (selectedMode == Gamemode::TimeTrial)
+    // {
+    //     activePlayerCount = 1;
+    // }
+    // else if (selectedMode == Gamemode::PVP)
+    // {
+    //     activePlayerCount = 2;
+    // }
+    // else if (selectedMode == Gamemode::AI)
+    // {
+    //     activePlayerCount = 1; // player1 + aiCar (or however many)
+    // }
+
+    // // Set active status
+    // for (size_t i = 0; i < cars.size(); ++i)
+    // {
+    //     if (selectedMode == Gamemode::PVP)
+    //         cars[i]->setActive(i < (size_t)activePlayerCount);
+    //     else if (selectedMode == Gamemode::AI)
+    //         cars[i]->setActive(i != 1);
+    // }
+
     if (selectedMode == Gamemode::TimeTrial)
     {
-        activePlayerCount = 1;
+        player1.setActive(true);
+        player2.setActive(false);
+        ai1.setActive(false);
     }
     else if (selectedMode == Gamemode::PVP)
     {
-        activePlayerCount = 2;
+        player1.setActive(true);
+        player2.setActive(true);
+        ai1.setActive(false);
     }
     else if (selectedMode == Gamemode::AI)
     {
-        activePlayerCount = 2; // player1 + aiCar (or however many)
-    }
-
-    // Set active status
-    for (size_t i = 0; i < cars.size(); ++i)
-    {
-        cars[i]->setActive(i < (size_t)activePlayerCount);
+        player1.setActive(true);
+        player2.setActive(false);
+        ai1.setActive(true);
     }
     lapData = LapTime();
 }
@@ -75,10 +103,16 @@ void Game::init()
     track.LoadTrack("assets/textures/track1.png");
     player1.load("assets/textures/car1.png");
     player2.load("assets/textures/car2.png");
+    ai1.load("assets/textures/car2.png");
+
     cars.push_back(&player1);
     cars.push_back(&player2);
+    cars.push_back(&ai1);
 
     waypoints = track.getWaypoints();
+
+    ai1.aiController = std::make_unique<AIController>(&ai1, waypoints);
+
     if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
         throw std::runtime_error("Engine sound not found\n");
     engineAudio.setLoop(true);
@@ -102,10 +136,11 @@ void Game::init()
     graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player1);
     graphics->init();
     collisionHandler = std::make_unique<CollisionHandler>(track, cars);
-    player1.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
-                                 { return this->collisionHandler->handleCollision(car, pos, angle, oldPos, oldAngle, dt); });
-    player2.setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
-                                 { return this->collisionHandler->handleCollision(car, pos, angle, oldPos, oldAngle, dt); });
+    for (Car *car : cars)
+    {
+        car->setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
+                                  { return this->collisionHandler->handleCollision(car, pos, angle, oldPos, oldAngle, dt); });
+    }
     stateStack.push(GameState::Home);
 }
 
@@ -238,8 +273,6 @@ void Game::handleEvents()
                     const auto &ResetButtons = graphics->getResetButtonsPVP();
                     if (player1.isStuck() && ResetButtons[0].contains(mappedMousePos))
                     {
-                        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
-                            std::cout << "YAY";
                         player1.resetPosition(waypoints);
                     }
                     if (player2.isStuck() && ResetButtons[1].contains(mappedMousePos))
@@ -418,6 +451,23 @@ void Game::update(float dt)
                 checkWinner(cars[i], i + 1);
             }
         }
+        else if (selectedMode == Gamemode::AI)
+        {
+            handlePlayerMovement(dt);
+            ai1.aiController->update(cars, dt);
+            ai1.handleMovement(dt, ai1.aiController->getHorizontalInput(), ai1.aiController->getVerticalInput(), track.getFriction());
+
+            totalRaceTime += dt;
+            updateRacePositions();
+            for (size_t i = 0; i < cars.size(); i++)
+            {
+                if (!cars[i]->getActive())
+                    continue;
+                cars[i]->updateStuckTime(dt);
+                cars[i]->updateITime(dt);
+                checkWinner(cars[i], i + 1);
+            }
+        }
     }
 }
 
@@ -440,9 +490,9 @@ void Game::render()
     }
     else if (stateStack.top() == GameState::Playing)
     {
-        if (selectedMode == Gamemode::TimeTrial)
+        if (selectedMode == Gamemode::TimeTrial || selectedMode == Gamemode::AI)
         {
-            graphics->renderGamePlay();
+            graphics->renderGamePlay(cars);
             graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);

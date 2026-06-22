@@ -16,8 +16,6 @@
 
 class Game
 {
-    float dt;
-    int score;
 
     Leaderboard leaderboardManager;
     std::stack<GameState> stateStack;
@@ -27,6 +25,8 @@ class Game
 
     Player player1;
     Player player2;
+    AI ai1;
+
     sf::View hudView;
 
     float totalRaceTime;
@@ -66,6 +66,5 @@ public:
     void checkWinner(Car *player, int playerNo);
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
-    Game() : dt(0.0f), score(0) {}
     ~Game() = default;
 };

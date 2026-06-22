@@ -44,7 +44,7 @@ public:
     void renderHUD(float elapsed, int currentLap, int totalLaps, float currentLapTime, const LapTime &lapData);
     void renderHomeScreen();
     void renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes);
-    void renderGamePlay();
+    void renderGamePlay(const std::vector<Car *> cars);
     void renderPauseScreen();
     void debugPlayDisplay(Car *car);
     const std::vector<sf::FloatRect> &getHomeButtons() const { return homeButtons; }
@@ -62,4 +62,5 @@ public:
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2);
     void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
+    void renderAICars(const std::vector<Car *> &cars);
 };

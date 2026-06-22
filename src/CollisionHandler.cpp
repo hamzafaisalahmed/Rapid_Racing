@@ -80,10 +80,7 @@ void CollisionHandler::resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos
     car2->setPosition(car2->getPosition() - separation);
 }
 
-CollisionHandler::CollisionHandler(Track &track, std::vector<Car *> &cars)
-    : track(track), cars(cars)
-{
-}
+CollisionHandler::CollisionHandler(Track &track, std::vector<Car *> &cars) : track(track), cars(cars) {}
 
 bool CollisionHandler::handleCollision(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
 {
@@ -95,7 +92,7 @@ bool CollisionHandler::handleCollision(Car *car, sf::Vector2f pos, float angle, 
     {
         impactCarryover result = handleCollisionResponse(wallIndex, car, pos, angle, oldPos, oldAngle, dt);
         car->setCurrSpeed(result.speed);
-        car->setAngle(result.angle);
+        // car->setAngle(result.angle);
         car->setAngularVelocity(result.angularVelocity);
 
         pos = oldPos + result.pos;
@@ -206,7 +203,7 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
         return returnValue;
 
     float speed = car->getCurrSpeed();
-    float impact = std::abs(speed) * 1.1f;
+    float impact = std::abs(speed) * impactScale;
     float spinDirection = 0.f;
     sf::Vector2f pushDir = car->getPerpendicularVector();
 

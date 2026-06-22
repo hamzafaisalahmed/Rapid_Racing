@@ -100,3 +100,45 @@ struct impactCarryover
     float angularVelocity = 0;
     int index = -1;
 };
+
+struct AIConsts
+{
+    static constexpr float LOOKAHEAD_OFFSET = 3.f;
+    static constexpr float CORNER_THRESHOLD = 0.7f;
+    static constexpr float OVERTAKE_DETECTION_STRAIGHT = 400.f;
+    static constexpr float OVERTAKE_DETECTION_CORNER = 150.f;
+    static constexpr float IN_FRONT_THRESHOLD = 0.2f;
+    static constexpr float STEERING_DEADZONE = 0.05f;
+    static constexpr float SAFE_MARGIN = 5.0f;
+};
+
+// Vector math helpers
+inline float dotProduct(const sf::Vector2f &a, const sf::Vector2f &b)
+{
+    return (a.x * b.x) + (a.y * b.y);
+}
+
+inline float crossProduct(const sf::Vector2f &a, const sf::Vector2f &b)
+{
+    return (a.x * b.y) - (a.y * b.x);
+}
+
+inline sf::Vector2f normalize(const sf::Vector2f &v)
+{
+    float len = std::sqrt((v.x * v.x) + (v.y * v.y));
+    if (len < 0.0001f)
+        return v; // Avoid division by zero
+    return sf::Vector2f(v.x / len, v.y / len);
+}
+
+inline float magnitude(const sf::Vector2f &v)
+{
+    return std::sqrt((v.x * v.x) + (v.y * v.y));
+}
+
+enum class TargetSide : int
+{
+    Left = 0,
+    Mid = 1,
+    Right = 2
+};

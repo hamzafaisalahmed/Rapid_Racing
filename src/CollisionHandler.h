@@ -29,7 +29,7 @@ private:
     float touchThreshold = 5.f;
     float sideCollisionDamping = 0.5f;
     float headCollisionDamping = -0.7f;
-    float impactAngularVelocityFactor = 1.1f;
+    float impactScale = 1.1f;
     float wallPushMultiplier = 2.f;
     float tunnelingChecks = 5;
 

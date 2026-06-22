@@ -298,13 +298,14 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
     }
 }
 
-void Graphics::renderGamePlay()
+void Graphics::renderGamePlay(const std::vector<Car *> cars)
 {
     // sf::Vector2u trackSize = track.getSize();
     // gameView.setSize(static_cast<float>(trackSize.x), static_cast<float>(trackSize.y));
     // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
+
     sf::Vector2u trackSize = track.getSize();
-    sf::Vector2f playerPos = player.getPosition();
+    sf::Vector2f playerPos = cars[2]->getPosition();
     sf::Vector2f viewCenter = playerPos;
     float viewWidth = gameView.getSize().x;
     float viewHeight = gameView.getSize().y;
@@ -326,6 +327,12 @@ void Graphics::renderGamePlay()
     }
     else
         player.draw(window);
+    for (size_t i = 2; i < cars.size(); i++)
+    {
+        if (!cars[i]->getActive())
+            continue;
+        cars[i]->draw(window);
+    }
     debugPlayDisplay(&player);
 }
 
@@ -499,7 +506,7 @@ void Graphics::renderPVPGameplay(Player &player2)
     sf::Vector2u trackSize = track.getSize();
 
     // Store players and viewport starting X-coordinates in arrays for iteration
-    const Player *players[2] = {&player, &player2};
+    const Car *players[2] = {&player, &player2};
     float viewportsX[2] = {0.f, 0.5f};
 
     // Dynamic Clamping Math based on zoom level
@@ -713,5 +720,15 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
 
         dot.setPosition(minimapPos);
         window.draw(dot);
+    }
+}
+
+void Graphics::renderAICars(const std::vector<Car *> &cars)
+{
+    for (size_t i = 2; i < cars.size(); i++)
+    {
+        if (!cars[i]->getActive())
+            continue;
+        cars[i]->draw(window);
     }
 }
