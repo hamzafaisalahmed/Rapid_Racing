@@ -305,7 +305,7 @@ void Graphics::renderGamePlay(const std::vector<Car *> cars)
     // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
 
     sf::Vector2u trackSize = track.getSize();
-    sf::Vector2f playerPos = cars[2]->getPosition();
+    sf::Vector2f playerPos = player.getPosition();
     sf::Vector2f viewCenter = playerPos;
     float viewWidth = gameView.getSize().x;
     float viewHeight = gameView.getSize().y;

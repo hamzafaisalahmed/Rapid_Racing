@@ -21,6 +21,7 @@ add_executable(Rapid_Racing
     src/Graphics.cpp
     src/CollisionHandler.cpp
     src/AIController.cpp
+    src/Car.cpp
 )
 
 target_link_libraries(Rapid_Racing

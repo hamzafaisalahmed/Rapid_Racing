@@ -35,60 +35,40 @@ void Game::resetLevel()
     }
     engineAudio.play();
     totalRaceTime = 0.f;
-    if (selectedMode == Gamemode::TimeTrial)
+    const float y1 = 2550.f;
+    const float y2 = 2600.f;
+    player1.setPosition(sf::Vector2f(1620.f, y1));
+    if (selectedMode == Gamemode::PVP)
     {
-        player1.setPosition(sf::Vector2f(1620.f, 2550.f));
-    }
-    else if (selectedMode == Gamemode::PVP)
-    {
-        player1.setPosition(sf::Vector2f(1620.f, 2550.f));
-        player2.setPosition(sf::Vector2f(1620.f, 2600.f));
+        player2.setPosition(sf::Vector2f(1620.f, y2));
     }
     else if (selectedMode == Gamemode::AI)
     {
-        player1.setPosition(sf::Vector2f(1620.f, 2550.f));
-        ai1.setPosition(sf::Vector2f(1620.f, 2600.f));
+        for (size_t i = 2; i < cars.size(); i += 2)
+        {
+            float xPos = 1620.f - (i - 1) * 30.f;
+            cars[i]->setPosition(sf::Vector2f(xPos, y1));
+            if (i + 1 < cars.size())
+                cars[i + 1]->setPosition(sf::Vector2f(xPos, y2));
+        }
     }
-    // int activePlayerCount = 0;
-    // if (selectedMode == Gamemode::TimeTrial)
-    // {
-    //     activePlayerCount = 1;
-    // }
-    // else if (selectedMode == Gamemode::PVP)
-    // {
-    //     activePlayerCount = 2;
-    // }
-    // else if (selectedMode == Gamemode::AI)
-    // {
-    //     activePlayerCount = 1; // player1 + aiCar (or however many)
-    // }
-
-    // // Set active status
-    // for (size_t i = 0; i < cars.size(); ++i)
-    // {
-    //     if (selectedMode == Gamemode::PVP)
-    //         cars[i]->setActive(i < (size_t)activePlayerCount);
-    //     else if (selectedMode == Gamemode::AI)
-    //         cars[i]->setActive(i != 1);
-    // }
-
-    if (selectedMode == Gamemode::TimeTrial)
+    for (size_t i = 0; i < cars.size(); ++i)
     {
-        player1.setActive(true);
-        player2.setActive(false);
-        ai1.setActive(false);
-    }
-    else if (selectedMode == Gamemode::PVP)
-    {
-        player1.setActive(true);
-        player2.setActive(true);
-        ai1.setActive(false);
-    }
-    else if (selectedMode == Gamemode::AI)
-    {
-        player1.setActive(true);
-        player2.setActive(false);
-        ai1.setActive(true);
+        if (selectedMode == Gamemode::TimeTrial)
+        {
+            cars[i]->setActive(i == 0);
+        }
+        else if (selectedMode == Gamemode::PVP)
+        {
+            cars[i]->setActive(i == 0 || i == 1);
+        }
+        else if (selectedMode == Gamemode::AI)
+        {
+            if (i == 1)
+                cars[i]->setActive(false);
+            else
+                cars[i]->setActive(true);
+        }
     }
     lapData = LapTime();
 }
@@ -101,17 +81,20 @@ void Game::init()
     window.setFramerateLimit(60);
 
     track.LoadTrack("assets/textures/track1.png");
+    waypoints = track.getWaypoints();
+
     player1.load("assets/textures/car1.png");
     player2.load("assets/textures/car2.png");
-    ai1.load("assets/textures/car2.png");
 
     cars.push_back(&player1);
     cars.push_back(&player2);
-    cars.push_back(&ai1);
-
-    waypoints = track.getWaypoints();
-
-    ai1.aiController = std::make_unique<AIController>(&ai1, waypoints);
+    for (size_t i = 0; i < (size_t)aiCount; i++)
+    {
+        AI *newAi = new AI();
+        newAi->load("assets/textures/car2.png");
+        newAi->aiController = std::make_unique<AIController>(newAi, waypoints);
+        cars.push_back(newAi);
+    }
 
     if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
         throw std::runtime_error("Engine sound not found\n");
@@ -434,9 +417,9 @@ void Game::update(float dt)
                 }
             }
         }
-        else // Sort cars to process trailing vehicles first (natural chain reaction logic)
-            std::sort(cars.begin(), cars.end(), [](Car *a, Car *b)
-                      { return a->getRacePos() > b->getRacePos(); });
+        // else // Sort cars to process trailing vehicles first (natural chain reaction logic)
+        //     std::sort(cars.begin(), cars.end(), [](Car *a, Car *b)
+        //               { return a->getRacePos() > b->getRacePos(); });
         if (selectedMode == Gamemode::PVP)
         {
             handlePlayerMovement(dt);
@@ -454,9 +437,17 @@ void Game::update(float dt)
         else if (selectedMode == Gamemode::AI)
         {
             handlePlayerMovement(dt);
-            ai1.aiController->update(cars, dt);
-            ai1.handleMovement(dt, ai1.aiController->getHorizontalInput(), ai1.aiController->getVerticalInput(), track.getFriction());
-
+            for (size_t i = 0; i < cars.size(); i++)
+            {
+                if (!cars[i]->isAI() || !cars[i]->getActive())
+                    continue;
+                AI *aiCar = static_cast<AI *>(cars[i]);
+                if (aiCar && aiCar->aiController)
+                {
+                    aiCar->aiController->update(cars, dt);
+                    aiCar->handleAIMovement(dt, track.getFriction());
+                }
+            }
             totalRaceTime += dt;
             updateRacePositions();
             for (size_t i = 0; i < cars.size(); i++)

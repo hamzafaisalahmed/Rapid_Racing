@@ -25,8 +25,7 @@ class Game
 
     Player player1;
     Player player2;
-    AI ai1;
-
+    const int aiCount = 7;
     sf::View hudView;
 
     float totalRaceTime;
@@ -66,5 +65,12 @@ public:
     void checkWinner(Car *player, int playerNo);
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
-    ~Game() = default;
+    ~Game()
+    {
+        for (int i = 2; i < aiCount; ++i)
+        {
+            delete cars[i];
+        }
+        cars.clear();
+    }
 };
