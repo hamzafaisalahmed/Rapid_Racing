@@ -36,6 +36,21 @@ class Graphics
     Track &track;
     Player &player;
 
+    const std::vector<sf::Color> carColors = {
+        // Extracted from your provided car textures
+        sf::Color(255, 215, 0), // Gold (car1.png)
+        sf::Color(220, 20, 60), // Race Red (car2.png)
+
+        // 7 Additional Unique Colors
+        sf::Color(0, 100, 255), // Electric Blue
+        sf::Color(50, 205, 50), // Lime Green
+        sf::Color(148, 0, 211), // Dark Violet
+        sf::Color(255, 140, 0), // Dark Orange
+        sf::Color(0, 255, 255), // Cyan
+        sf::Color(255, 0, 255), // Magenta
+        sf::Color(25, 25, 112)  // Midnight Blue
+    };
+
 public:
     Graphics(sf::RenderWindow &w, sf::View &v, sf::View &hud, Track &t, Player &p) : window(w), gameView(v), hudView(hud), track(t), player(p) {}
 
@@ -57,7 +72,7 @@ public:
     const sf::FloatRect &getResetButton() const { return resetButton; }
     void renderResetButton(Gamemode mode, bool p1 = false, bool p2 = false);
     void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
-
+    void setCarColors(const std::vector<Car *> cars);
     void renderPVPGameplay(Player &player2);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium);

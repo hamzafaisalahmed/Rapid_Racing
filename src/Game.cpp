@@ -97,8 +97,8 @@ void Game::init()
     track.LoadTrack("assets/textures/track1.png");
     waypoints = track.getWaypoints();
 
-    player1.load("assets/textures/car1.png");
-    player2.load("assets/textures/car2.png");
+    player1.load("assets/textures/detail.png", "assets/textures/base.png");
+    player2.load("assets/textures/detail.png", "assets/textures/base.png");
     player1.setTitle("PL1");
     player2.setTitle("PL2");
     cars.push_back(&player1);
@@ -106,7 +106,7 @@ void Game::init()
     for (size_t i = 0; i < (size_t)aiCount; i++)
     {
         AI *newAi = new AI();
-        newAi->load("assets/textures/car2.png");
+        newAi->load("assets/textures/detail.png", "assets/textures/base.png");
         newAi->aiController = std::make_unique<AIController>(newAi, waypoints);
         newAi->setTitle("AI" + std::to_string(i + 1));
         cars.push_back(newAi);
@@ -140,6 +140,8 @@ void Game::init()
         car->setCollisionFunction([this](Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt)
                                   { return this->collisionHandler->handleCollision(car, pos, angle, oldPos, oldAngle, dt); });
     }
+
+    graphics->setCarColors(cars);
     stateStack.push(GameState::Home);
 }
 

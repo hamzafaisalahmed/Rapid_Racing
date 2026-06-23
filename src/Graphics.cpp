@@ -186,7 +186,13 @@ void Graphics::renderHUD(float elapsed, int currentLap, int totalLaps, float cur
     // Switch back to viewport game view so camera physics tracking continues smoothly
     window.setView(gameView);
 }
-
+void Graphics::setCarColors(const std::vector<Car *> cars)
+{
+    for (size_t i = 0; i < cars.size(); i++)
+    {
+        cars[i]->setBodyColor(carColors[i]);
+    }
+}
 void Graphics::renderHomeScreen()
 {
     window.setView(hudView);
@@ -725,13 +731,12 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
     window.draw(minimapSprite);
 
     // Draw cars
-    sf::Color carColors[] = {sf::Color::Cyan, sf::Color::Magenta, sf::Color::Yellow};
     for (size_t i = 0; i < cars.size(); ++i)
     {
         if (!cars[i]->getActive())
             continue;
         sf::CircleShape dot(4.f);
-        dot.setFillColor(carColors[i % 3]);
+        dot.setFillColor(carColors[i]);
 
         sf::Vector2f minimapPos = cars[i]->getPosition() * minimapScale;
         minimapPos.x += minimapX;

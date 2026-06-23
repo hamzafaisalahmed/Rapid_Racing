@@ -12,8 +12,10 @@ class AIController;
 class Car
 {
 protected:
-    sf::Texture texture;
-    sf::Sprite sprite;
+    sf::Texture baseTexture;
+    sf::Texture detailTexture;
+    sf::Sprite baseSprite;
+    sf::Sprite detailSprite;
 
     std::string title;
     sf::Vector2f position;
@@ -38,10 +40,13 @@ protected:
     const float maxITime = 2.f;
     const float maxTurnAngularVelocity = 360.f;
 
+    void syncSprites(sf::Vector2f p, float a);
+
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac);
     void setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc);
-    void load(const std::string &dir);
+    void load(const std::string &baseDir, const std::string &detailDir);
+    void setBodyColor(sf::Color color);
 
     sf::Vector2f getDimensions() const;
     std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle);

@@ -26,27 +26,54 @@ void Car::setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf
     collisionChecker = cc;
 }
 
-void Car::load(const std::string &dir)
+void Car::load(const std::string &baseDir, const std::string &detailDir)
 {
-    try
-    {
-        if (!texture.loadFromFile(dir))
-        {
-            throw std::runtime_error("Texture not found");
-        }
-        sprite.setTexture(texture);
-        sprite.setScale(0.08f, 0.08f);
-        sprite.setOrigin(texture.getSize().x / 2.f, texture.getSize().y * 0.65f);
-        sprite.setPosition(position);
-        dimensions = sf::Vector2f(
-            texture.getSize().x * 0.08f,
-            texture.getSize().y * 0.08f);
-    }
-    catch (const std::runtime_error &e)
-    {
-        std::cout << "Texture unable to load..." << e.what() << std::endl;
-        throw;
-    }
+    baseTexture.loadFromFile(baseDir);
+    detailTexture.loadFromFile(detailDir);
+
+    baseSprite.setTexture(baseTexture);
+    detailSprite.setTexture(detailTexture);
+
+    baseSprite.setScale(0.08f, 0.08f);
+    detailSprite.setScale(0.08f, 0.08f);
+
+    // Set origin once
+    sf::Vector2f origin(baseTexture.getSize().x / 2.f, baseTexture.getSize().y * 0.65f);
+    baseSprite.setOrigin(origin);
+    detailSprite.setOrigin(origin);
+}
+
+void Car::syncSprites(sf::Vector2f p, float a)
+{
+
+    baseSprite.setPosition(p);
+    baseSprite.setRotation(a);
+
+    detailSprite.setPosition(p);
+    detailSprite.setRotation(a);
+}
+
+void Car::setPosition(sf::Vector2f pos)
+{
+    position = pos;
+    syncSprites(pos, angle);
+}
+
+void Car::setAngle(float a)
+{
+    angle = a;
+    syncSprites(position, angle);
+}
+
+void Car::setBodyColor(sf::Color color)
+{
+    baseSprite.setColor(color);
+}
+
+void Car::draw(sf::RenderWindow &window) const
+{
+    window.draw(detailSprite); // Detail layer (white/unaffected)
+    window.draw(baseSprite);   // Base layer (tinted)
 }
 
 sf::Vector2f Car::getDimensions() const
@@ -60,10 +87,10 @@ std::vector<sf::Vector2f> Car::getCorners(sf::Vector2f pos, float angle)
     t.translate(pos);
     t.rotate(angle);
 
-    sf::FloatRect bounds = sprite.getLocalBounds();
-    float w = (bounds.width * sprite.getScale().x) / 2.2f;
-    float hr = (bounds.height * sprite.getScale().y) * 0.3f;
-    float hf = (bounds.height * sprite.getScale().y) * 0.6f;
+    sf::FloatRect bounds = baseSprite.getLocalBounds();
+    float w = (bounds.width * baseSprite.getScale().x) / 2.2f;
+    float hr = (bounds.height * baseSprite.getScale().y) * 0.3f;
+    float hf = (bounds.height * baseSprite.getScale().y) * 0.6f;
 
     return {
         t.transformPoint(-w, -hf),
@@ -78,10 +105,10 @@ std::vector<sf::Vector2f> Car::getCorners()
     t.translate(position);
     t.rotate(angle);
 
-    sf::FloatRect bounds = sprite.getLocalBounds();
-    float w = (bounds.width * sprite.getScale().x) / 2.2f;
-    float hf = (bounds.height * sprite.getScale().y) * 0.3f;
-    float hr = (bounds.height * sprite.getScale().y) * 0.6f;
+    sf::FloatRect bounds = baseSprite.getLocalBounds();
+    float w = (bounds.width * baseSprite.getScale().x) / 2.2f;
+    float hf = (bounds.height * baseSprite.getScale().y) * 0.3f;
+    float hr = (bounds.height * baseSprite.getScale().y) * 0.6f;
 
     return {
         t.transformPoint(-w, hf),
@@ -104,20 +131,9 @@ void Car::decelerate(float dt)
         speed = maxReverseSpeed;
 }
 
-void Car::draw(sf::RenderWindow &window) const
-{
-    window.draw(sprite);
-}
-
 sf::Vector2f Car::getPosition() const
 {
     return position;
-}
-
-void Car::setPosition(sf::Vector2f pos)
-{
-    position = pos;
-    sprite.setPosition(position);
 }
 
 float Car::getAngle() const
@@ -149,12 +165,6 @@ void Car::setAcc(float a)
 float Car::getAcc() const
 {
     return acc;
-}
-
-void Car::setAngle(float a)
-{
-    angle = a;
-    sprite.setRotation(angle);
 }
 
 void Car::setCurrSpeed(float s)
