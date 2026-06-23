@@ -60,7 +60,8 @@ public:
 
     void renderPVPGameplay(Player &player2);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
-    void renderPVPLvlComplete(const Player &player2);
+    void renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium);
     void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
-    void renderAICars(const std::vector<Car *> &cars);
+    void renderAILvlComplete(Car &player, LapTime &lapData, const std::vector<Car *> &podium);
+    void renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed);
 };

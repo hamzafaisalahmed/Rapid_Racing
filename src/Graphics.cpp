@@ -241,60 +241,67 @@ void Graphics::renderHomeScreen()
 void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes)
 {
     window.setView(window.getDefaultView());
-    window.clear(sf::Color::Black);
 
-    sf::Text title;
-    drawTextCentered("RACE COMPLETE!", 600.f, 60.f, 50, sf::Color::White);
+    // 1. Background Overlay
+    sf::RectangleShape overlay(sf::Vector2f(1200.f, 800.f));
+    overlay.setFillColor(sf::Color(0, 0, 0, 220));
+    window.draw(overlay);
 
-    float fastest = lapData.bestLap;
-    int mins = (int)(fastest / 60.f);
-    int secs = (int)fastest % 60;
-    int ms = (int)((fastest - (int)fastest) * 1000);
+    // 2. Results Panel
+    sf::RectangleShape panel(sf::Vector2f(600.f, 400.f));
+    panel.setPosition(300.f, 200.f);
+    panel.setFillColor(sf::Color(20, 5, 8, 240));
+    panel.setOutlineColor(sf::Color(210, 35, 45));
+    panel.setOutlineThickness(3.f);
+    window.draw(panel);
 
-    std::string lapTime = "Your ID: " + std::to_string(lapData.id) + " | Best Lap: " + std::to_string(mins) + ":" +
-                          (secs < 10 ? "0" : "") + std::to_string(secs) + "." +
-                          (ms < 100 ? "0" : "") + (ms < 10 ? "0" : "") + std::to_string(ms);
-    drawTextCentered(lapTime, 600.f, 150.f, 30, sf::Color::White);
+    // 3. Header
+    drawTextCentered("TIME TRIAL COMPLETE!", 600.f, 240.f, 35, sf::Color::White);
 
-    // Global top 3
+    // Sort global times for the leaderboard
     std::vector<LapTime> sortedTimes = allTimes;
     std::sort(sortedTimes.begin(), sortedTimes.end(),
               [](const LapTime &a, const LapTime &b)
               { return a.bestLap < b.bestLap; });
 
-    std::string text = "GLOBAL TOP 3:\n\n";
-    for (int i = 0; i < std::min(3, (int)sortedTimes.size()); i++)
+    // 4. Global Top 3 Loop
+    for (size_t i = 0; i < std::min<size_t>(3, sortedTimes.size()); ++i)
     {
-        float time = sortedTimes[i].bestLap;
-        int m = (int)(time / 60.f);
-        int s = (int)(time) % 60;
-        int milli = (int)((time - (int)time) * 1000);
+        std::string label = (i == 0) ? "1ST: " : (i == 1) ? "2ND: "
+                                                          : "3RD: ";
 
-        text += std::to_string(i + 1) + ". ID:" + std::to_string(sortedTimes[i].id) + " | " +
-                std::to_string(m) + ":" +
-                (s < 10 ? "0" : "") + std::to_string(s) + "." +
-                (milli < 100 ? "0" : "") + (milli < 10 ? "0" : "") + std::to_string(milli) + "\n\n";
+        sf::Color textColor = sf::Color(200, 200, 200); // Default Silver
+        if (i == 0)
+            textColor = sf::Color(255, 215, 0); // Gold
+        else if (i == 2)
+            textColor = sf::Color(205, 127, 50); // Bronze
+
+        std::string rowText = label + "ID " + std::to_string(sortedTimes[i].id) + " - " + formatRaceTime(sortedTimes[i].bestLap);
+        drawTextCentered(rowText, 600.f, 290.f + (i * 35.f), 24, textColor);
     }
 
-    drawTextCentered(text, 600.f, 300.f, 20, sf::Color::White);
+    // 5. Personal Player Stat (Highlighted in Cyan at the bottom of the list)
+    std::string personalStat = "Your Best Lap: " + formatRaceTime(lapData.bestLap);
+    drawTextCentered(personalStat, 600.f, 430.f, 22, sf::Color::Cyan);
 
-    // Buttons
-    std::vector<std::string>
-        buttonNames = {"RESTART", "BACK TO MENU"};
+    // 6. Styled Buttons
     levelCompleteButtons.clear();
+    std::string labels[] = {"RESTART", "MENU"};
 
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 2; ++i)
     {
-        float buttonX = 300.f + (i * 360.f);
-        float buttonY = 550.f;
+        float btnX = 400.f + (i * 250.f);
+        sf::FloatRect btnRect(btnX, 520.f, 200.f, 50.f);
+        levelCompleteButtons.push_back(btnRect);
 
-        sf::RectangleShape button(sf::Vector2f(120.f, 40.f));
-        button.setPosition(buttonX, buttonY);
-        button.setFillColor(sf::Color::White);
-        window.draw(button);
-        levelCompleteButtons.push_back(button.getGlobalBounds());
+        sf::RectangleShape btn(sf::Vector2f(btnRect.width, btnRect.height));
+        btn.setPosition(btnRect.left, btnRect.top);
+        btn.setFillColor(sf::Color(45, 10, 15, 230));
+        btn.setOutlineColor(sf::Color(110, 30, 35));
+        btn.setOutlineThickness(2.f);
 
-        drawTextCentered(buttonNames[i], buttonX + 60.f, buttonY + 20.f, 16, sf::Color::Black);
+        window.draw(btn);
+        drawTextCentered(labels[i], btnRect.left + 100.f, btnRect.top + 25.f, 18, sf::Color::White);
     }
 }
 
@@ -589,7 +596,7 @@ void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRac
 
     // --- 3. INDIVIDUAL PLAYER STATS ---
     // Safely handles the +1 lap offset and pulls all data internally
-    int laps[] = {player.getCurrLap() + 1, player2.getCurrLap() + 1};
+    int laps[] = {player.getCurrLap(), player2.getCurrLap()};
     int positions[] = {player.getRacePos(), player2.getRacePos()};
     int speeds[] = {(int)std::abs(player.getCurrSpeed()), (int)std::abs(player2.getCurrSpeed())};
     float sideX[] = {15.f, 1005.f};
@@ -635,7 +642,7 @@ void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRac
     window.draw(pause);
 }
 
-void Graphics::renderPVPLvlComplete(const Player &player2)
+void Graphics::renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium)
 {
     window.setView(hudView);
 
@@ -655,8 +662,22 @@ void Graphics::renderPVPLvlComplete(const Player &player2)
     // 3. Header & Stats
     drawTextCentered("RACE COMPLETE!", 600.f, 250.f, 40, sf::Color::White);
 
-    drawTextCentered("P1: " + std::to_string(player.getCurrLap() + 1) + " LAPS", 600.f, 320.f, 24, sf::Color(200, 200, 200));
-    drawTextCentered("P2: " + std::to_string(player2.getCurrLap() + 1) + " LAPS", 600.f, 360.f, 24, sf::Color(200, 200, 200));
+    // Track rows drawn to format text positions and labels correctly if a car is skipped
+    size_t displayedCount = 0;
+    for (size_t i = 0; i < podium.size() && displayedCount < 2; ++i)
+    {
+        // Guardrail: Skip inactive or null cars
+        if (!podium[i] || !podium[i]->getActive())
+            continue;
+
+        std::string label = (displayedCount == 0) ? "1ST: " : "2ND: ";
+        sf::Color textColor = (displayedCount == 0) ? sf::Color(255, 215, 0) : sf::Color(200, 200, 200);
+
+        drawTextCentered(label + podium[i]->getTitle(),
+                         600.f, 310.f + (displayedCount * 35.f), 24, textColor);
+
+        displayedCount++;
+    }
 
     // 4. Buttons (Matching your event handler index 0 = REMATCH, 1 = MENU)
     levelCompleteButtons.clear();
@@ -664,7 +685,6 @@ void Graphics::renderPVPLvlComplete(const Player &player2)
 
     for (int i = 0; i < 2; ++i)
     {
-        // Position buttons matching your handler's expected layout
         float btnX = 400.f + (i * 250.f);
         float btnY = 520.f;
         sf::FloatRect btnRect(btnX, btnY, 200.f, 50.f);
@@ -681,7 +701,6 @@ void Graphics::renderPVPLvlComplete(const Player &player2)
         drawTextCentered(labels[i], btnRect.left + btnRect.width / 2.f, btnRect.top + btnRect.height / 2.f, 18, sf::Color::White);
     }
 }
-
 void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
 {
     window.setView(hudView);
@@ -723,12 +742,208 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
     }
 }
 
-void Graphics::renderAICars(const std::vector<Car *> &cars)
+void Graphics::renderAILvlComplete(Car &player, LapTime &lapData, const std::vector<Car *> &podium)
 {
-    for (size_t i = 2; i < cars.size(); i++)
+    window.setView(window.getDefaultView());
+
+    // 1. Background & Panel
+    sf::RectangleShape overlay(sf::Vector2f(1200.f, 800.f));
+    overlay.setFillColor(sf::Color(0, 0, 0, 220));
+    window.draw(overlay);
+
+    sf::RectangleShape panel(sf::Vector2f(600.f, 400.f));
+    panel.setPosition(300.f, 200.f);
+    panel.setFillColor(sf::Color(20, 5, 8, 240));
+    panel.setOutlineColor(sf::Color(210, 35, 45));
+    panel.setOutlineThickness(3.f);
+    window.draw(panel);
+
+    // 2. Text
+    drawTextCentered("RACE COMPLETE!", 600.f, 240.f, 40, sf::Color::White);
+
+    // Track rows drawn to format text positions and labels correctly if a car is skipped
+    size_t displayedCount = 0;
+    for (size_t i = 0; i < podium.size() && displayedCount < 3; ++i)
     {
-        if (!cars[i]->getActive())
+        // Guardrail: Skip inactive or null cars
+        if (!podium[i] || !podium[i]->getActive())
             continue;
-        cars[i]->draw(window);
+
+        std::string label = (displayedCount == 0) ? "1ST: " : (displayedCount == 1) ? "2ND: "
+                                                                                    : "3RD: ";
+
+        sf::Color textColor = sf::Color(200, 200, 200); // Silver/Grey basic
+        if (displayedCount == 0)
+            textColor = sf::Color(255, 215, 0); // Gold
+        else if (displayedCount == 2)
+            textColor = sf::Color(205, 127, 50); // Bronze
+
+        drawTextCentered(label + podium[i]->getTitle(),
+                         600.f, 290.f + (displayedCount * 35.f), 24, textColor);
+
+        displayedCount++;
     }
+
+    // Shifted Best Lap down to 410.f to make room
+    drawTextCentered("Best Lap: " + formatRaceTime(lapData.bestLap), 600.f, 410.f, 22, sf::Color(160, 160, 170));
+
+    // Live player position display
+    drawTextCentered("Your Position: P" + std::to_string(player.getRacePos()), 600.f, 450.f, 22, sf::Color::Cyan);
+
+    // 3. Buttons (Clear and reuse existing member vector)
+    levelCompleteButtons.clear();
+    std::string labels[] = {"RESTART", "MENU"};
+
+    for (int i = 0; i < 2; ++i)
+    {
+        float btnX = 400.f + (i * 250.f);
+        sf::FloatRect btnRect(btnX, 520.f, 200.f, 50.f);
+        levelCompleteButtons.push_back(btnRect);
+
+        sf::RectangleShape btn(sf::Vector2f(btnRect.width, btnRect.height));
+        btn.setPosition(btnRect.left, btnRect.top);
+        btn.setFillColor(sf::Color(45, 10, 15, 230));
+        btn.setOutlineColor(sf::Color(110, 30, 35));
+        btn.setOutlineThickness(2.f);
+
+        window.draw(btn);
+        drawTextCentered(labels[i], btnRect.left + 100.f, btnRect.top + 25.f, 18, sf::Color::White);
+    }
+}
+
+void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed)
+{
+    // Switch to HUD view so UI elements remain locked to the window
+    window.setView(hudView);
+
+    // ========================================================
+    // 1. TOP-LEFT TIMING & LAP PODIUM
+    // ========================================================
+    sf::RectangleShape topPodium(sf::Vector2f(240.f, 75.f));
+    topPodium.setPosition(15.f, 15.f);
+    topPodium.setFillColor(sf::Color(30, 8, 10, 200));
+    topPodium.setOutlineColor(sf::Color(140, 30, 40));
+    topPodium.setOutlineThickness(1.5f);
+    window.draw(topPodium);
+
+    // Row 1: Race Timer
+    timerText.setString("TIME " + formatRaceTime(elapsed));
+    timerText.setCharacterSize(16);
+    timerText.setFillColor(sf::Color(255, 230, 230));
+    timerText.setPosition(25.f, 22.f);
+    window.draw(timerText);
+
+    // Row 2: Player Current Lap Counter (Accessing member 'player' directly)
+    sf::Text lapCounterText;
+    lapCounterText.setFont(*timerText.getFont());
+    lapCounterText.setCharacterSize(15);
+    lapCounterText.setFillColor(sf::Color(160, 160, 170));
+
+    int currentLapDisplay = std::min(player.getCurrLap(), totalLaps);
+    lapCounterText.setString("LAP  " + std::to_string(currentLapDisplay) + " / " + std::to_string(totalLaps));
+    lapCounterText.setPosition(25.f, 48.f);
+    window.draw(lapCounterText);
+
+    // ========================================================
+    // 2. F1-STYLE LIVE LEADERBOARD (LEFT SIDE)
+    // ========================================================
+    float rowHeight = 28.f;
+    float padding = 15.f;
+    float leaderHeight = (raceLeaderboard.size() * rowHeight) + padding;
+
+    sf::RectangleShape leaderPodium(sf::Vector2f(120.f, leaderHeight));
+    leaderPodium.setPosition(15.f, 105.f);
+    leaderPodium.setFillColor(sf::Color(20, 5, 8, 220));
+    leaderPodium.setOutlineColor(sf::Color(210, 35, 45));
+    leaderPodium.setOutlineThickness(1.5f);
+    window.draw(leaderPodium);
+
+    sf::Text leaderText;
+    leaderText.setFont(*timerText.getFont());
+    leaderText.setCharacterSize(15);
+
+    size_t displayedCount = 0;
+    for (size_t i = 0; i < raceLeaderboard.size(); ++i)
+    {
+        Car *c = raceLeaderboard[i];
+        if (!c || !c->getActive())
+            continue;
+
+        int pos = c->getRacePos();
+        std::string title = c->getTitle();
+        float startY = 115.f + (displayedCount * rowHeight);
+
+        // Dynamic podium coloring
+        sf::Color rowColor = sf::Color::White;
+        if (pos == 1)
+            rowColor = sf::Color(255, 215, 0); // Gold
+        else if (pos == 2)
+            rowColor = sf::Color(192, 192, 192); // Silver
+        else if (pos == 3)
+            rowColor = sf::Color(205, 127, 50); // Bronze
+
+        if (title == "PLR")
+            rowColor = sf::Color::Cyan;
+
+        // Col 1: Pos
+        leaderText.setString(std::to_string(pos));
+        leaderText.setFillColor(rowColor);
+        leaderText.setPosition(25.f, startY);
+        window.draw(leaderText);
+
+        // Col 2: Tag
+        leaderText.setString(title);
+        leaderText.setFillColor(rowColor);
+        leaderText.setPosition(65.f, startY);
+        window.draw(leaderText);
+
+        displayedCount++;
+    }
+
+    // ========================================================
+    // 3. BOTTOM-RIGHT SPEEDOMETER (SINGLE PLAYER ONLY)
+    // ========================================================
+    float speedX = 960.f;
+    float speedY1 = 700.f;
+    int displaySpeed1 = (int)(std::abs(player.getCurrSpeed())); // Using member 'player' here too
+
+    sf::RectangleShape speedPodium1(sf::Vector2f(220.f, 85.f));
+    speedPodium1.setPosition(speedX, speedY1);
+    speedPodium1.setFillColor(sf::Color(20, 5, 8, 220));
+    speedPodium1.setOutlineColor(sf::Color(210, 35, 45));
+    speedPodium1.setOutlineThickness(2.f);
+    window.draw(speedPodium1);
+
+    speedometer.setString(std::to_string(displaySpeed1));
+    speedometer.setCharacterSize(45);
+    speedometer.setFillColor(sf::Color::White);
+    speedometer.setPosition(speedX + 20.f, speedY1 + 10.f);
+    window.draw(speedometer);
+
+    sf::Text unitText1;
+    unitText1.setFont(*timerText.getFont());
+    unitText1.setString("KM/H");
+    unitText1.setCharacterSize(14);
+    unitText1.setFillColor(sf::Color(160, 160, 170));
+    unitText1.setPosition(speedX + 140.f, speedY1 + 45.f);
+    window.draw(unitText1);
+
+    // ========================================================
+    // 4. TOP-RIGHT PAUSE BUTTON ICON INTERACTION
+    // ========================================================
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+    if (pauseButton.contains(mappedMousePos))
+    {
+        pause.setColor(sf::Color(255, 100, 100)); // Hover flash
+    }
+    else
+    {
+        pause.setColor(sf::Color(255, 255, 255, 220));
+    }
+    window.draw(pause);
+
+    // Restore original game view camera configuration
+    window.setView(gameView);
 }

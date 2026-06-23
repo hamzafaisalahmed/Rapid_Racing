@@ -15,6 +15,7 @@ protected:
     sf::Texture texture;
     sf::Sprite sprite;
 
+    std::string title;
     sf::Vector2f position;
     sf::Vector2f dimensions;
     float angle;
@@ -53,7 +54,8 @@ public:
 
     sf::Vector2f getPosition() const;
     void setPosition(sf::Vector2f pos);
-
+    void setTitle(std::string s) { title = s; }
+    std::string getTitle() const { return title; }
     float getAngle() const;
     float getMaxSpeed() const;
     float getCurrSpeed() const;

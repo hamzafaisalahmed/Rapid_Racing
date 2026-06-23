@@ -51,7 +51,7 @@ class Game
     std::vector<CarPreset> carPresets{CarPreset(300.f, 50.f), CarPreset(400.f, 100.f), CarPreset(500.f, 200.f)};
     std::vector<int> maxLaps{1, 2, 3, 5};
 
-    int winner;
+    std::vector<Car *> raceLeaderboard;
 
 public:
     void init();
@@ -62,7 +62,7 @@ public:
     void handleEvents();
     void handlePlayerMovement(float dt);
     void resetLevel();
-    void checkWinner(Car *player, int playerNo);
+    void checkWinner(Car *player);
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
     ~Game()
