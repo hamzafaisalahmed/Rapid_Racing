@@ -44,11 +44,11 @@ protected:
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac);
-    void setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc);
+    void setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc) { collisionChecker = cc; }
     void load(const std::string &baseDir, const std::string &detailDir);
-    void setBodyColor(sf::Color color);
+    void setBodyColor(sf::Color color) { baseSprite.setColor(color); }
 
-    sf::Vector2f getDimensions() const;
+    sf::Vector2f getDimensions() const { return dimensions; }
     std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle);
     std::vector<sf::Vector2f> getCorners();
 
@@ -57,47 +57,55 @@ public:
 
     void draw(sf::RenderWindow &window) const;
 
-    sf::Vector2f getPosition() const;
     void setPosition(sf::Vector2f pos);
+    void setAngle(float a);
+
+    sf::Vector2f getPosition() const { return position; }
     void setTitle(std::string s) { title = s; }
     std::string getTitle() const { return title; }
-    float getAngle() const;
-    float getMaxSpeed() const;
-    float getCurrSpeed() const;
-    void setMaxSpeed(float ms);
-    void setAcc(float a);
-    float getAcc() const;
-    void setAngle(float a);
-    void setCurrSpeed(float s);
-    void setMaxReverseSpeed(float mrs);
-    float getMaxReverseSpeed() const;
-    float getMaxTurnSpeed() const;
+    float getAngle() const { return angle; }
+    float getMaxSpeed() const { return maxSpeed; }
+    float getCurrSpeed() const { return speed; }
+    void setAcc(float a) { acc = a; }
+    float getAcc() const { return acc; }
+    void setCurrSpeed(float s) { speed = s; }
+    void setMaxReverseSpeed(float mrs) { maxReverseSpeed = mrs; }
+    float getMaxReverseSpeed() const { return maxReverseSpeed; }
+    float getMaxTurnSpeed() const { return maxTurnSpeed; }
+    void setMaxSpeed(float ms)
+    {
+        maxSpeed = ms;
+        maxTurnSpeed = ms * 0.9f;
+    }
+
     float getTurnFactor() const;
     float handleMovement(float dt, carInput xIn, carInput yIn, float friction);
 
     bool updateWaypoint(const std::vector<Waypoint> &waypoints);
-    int getCurrWaypointIndex() const;
-    void resetWaypointIndex();
-    int getCurrLap() const;
-    void setCurrLap(int c);
+    int getCurrWaypointIndex() const { return currWaypointIndex; }
+    void resetWaypointIndex() { currWaypointIndex = 0; }
+    int getCurrLap() const { return currLap; }
+    void setCurrLap(int c) { currLap = c; }
     void updateStuckTime(float dt);
-    bool isStuck() const;
+    bool isStuck() const { return stuckTime > maxStuckTime; }
+
     void resetPosition(const std::vector<Waypoint> &waypoints);
-    void incrementLaps();
 
-    int getRacePos() const;
-    void setRacePos(int i);
-    bool getActive() const;
-    void setActive(bool b);
+    void incrementLaps() { currLap++; }
 
-    void setITime(float duration = 1.f);
+    int getRacePos() const { return racePos; }
+    void setRacePos(int i) { racePos = i; }
+    bool getActive() const { return isActive; }
+    void setActive(bool b) { isActive = b; }
+
+    void setITime(float duration = 1.f) { iTime = duration; }
     void updateITime(float dt);
-    float isInvincible() const;
-    float getITime() const;
+    float isInvincible() const { return iTime > 0.f; }
+    float getITime() const { return iTime; }
 
-    void setAngularVelocity(float a);
-    float getAngularVelocity() const;
-    void addTurnAngularVelocity(float a);
+    void setAngularVelocity(float a) { angularVelocity = a; }
+    float getAngularVelocity() const { return angularVelocity; }
+    void addTurnAngularVelocity(float a) { turnAngularVelocity = clamp(a, -maxTurnAngularVelocity, maxTurnAngularVelocity); }
     sf::Vector2f getDirectionVector() const;
     sf::Vector2f getPerpendicularVector() const;
 

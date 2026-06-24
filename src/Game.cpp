@@ -11,7 +11,6 @@ void Game::resetLevel()
 {
     raceLeaderboard.clear();
     const CarPreset &selected = carPresets[(size_t)selectedCarLvl];
-    currentLap = 1;
     for (auto &car : cars)
     {
         car->setMaxSpeed(selected.maxSpeed);
@@ -20,21 +19,10 @@ void Game::resetLevel()
         car->setAngle(90.f);
         car->setCurrSpeed(0.f);
         car->resetWaypointIndex();
-        car->setCurrLap(currentLap);
+        car->setCurrLap(1);
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
     currentLapTime = 0.f;
-    endscreen.stop();
-    engineAudio.setVolume(0.f);
-    if (audioMuted)
-    {
-        endscreen.setVolume(0.f);
-    }
-    else
-    {
-        endscreen.setVolume(70.f);
-    }
-    engineAudio.play();
     totalRaceTime = 0.f;
     const float y1 = 2550.f;
     const float y2 = 2600.f;
@@ -47,7 +35,7 @@ void Game::resetLevel()
     {
         for (size_t i = 2; i < cars.size(); i += 2)
         {
-            float xPos = 1620.f - (i - 1) * 30.f;
+            float xPos = 1610.f - (i - 1) * 30.f;
             cars[i]->setPosition(sf::Vector2f(xPos, y1));
             if (i + 1 < cars.size())
                 cars[i + 1]->setPosition(sf::Vector2f(xPos, y2));
@@ -121,9 +109,13 @@ void Game::init()
     endscreen.setLoop(true);
     endscreen.setVolume(70.f);
 
-    selectedCarLvl = 1;
-    selectedLaps = 1;
-    audioMuted = false;
+    if (!homeAudio.openFromFile("assets/audio/homescreen.ogg"))
+        throw std::runtime_error("Homescreen music not found");
+    homeAudio.setLoop(true);
+    homeAudio.setVolume(70.f);
+
+    selectedCarLvl = 2;
+    selectedLaps = 0;
 
     hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
 
@@ -142,7 +134,8 @@ void Game::init()
     }
 
     graphics->setCarColors(cars);
-    stateStack.push(GameState::Home);
+    stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio);
+    stateManager->pushHome();
 }
 
 void Game::run()
@@ -154,7 +147,7 @@ void Game::run()
         if (dt > 0.05f)
             dt = 0.05f;
         handleEvents();
-        GameState current = stateStack.top();
+        GameState current = stateManager->getCurrentState();
         if (current == GameState::Playing)
         {
             update(dt);
@@ -171,14 +164,13 @@ void Game::handleEvents()
     {
         if (event.type == sf::Event::Closed)
         {
-            engineAudio.stop();
-            endscreen.stop();
+            stateManager->stopAudio();
             window.close();
         }
         else if (event.type == sf::Event::MouseButtonPressed)
         {
             sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window), hudView);
-            if (stateStack.top() == GameState::Home)
+            if (stateManager->getCurrentState() == GameState::Home)
             {
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
@@ -200,34 +192,31 @@ void Game::handleEvents()
                                 else if (i == 2)
                                     selectedMode = Gamemode::TimeTrial;
                                 resetLevel();
-                                stateStack.push(GameState::Playing);
+                                stateManager->pushPlaying();
                             }
                             else if (i == 3)
-                                stateStack.push(GameState::Settings);
+                                stateManager->pushSettings();
 
                             break; // Exit loop once button action triggers
                         }
                     }
                 }
             }
-            else if (stateStack.top() == GameState::LevelComplete)
+            else if (stateManager->getCurrentState() == GameState::LevelComplete)
             {
                 std::vector<sf::FloatRect> levelCompleteButtons = graphics->getLevelCompleteButtons();
                 if (levelCompleteButtons[0].contains(mousePos))
                 {
                     resetLevel();
-                    stateStack.pop();
+                    stateManager->clear();
+                    stateManager->pushPlaying();
                 }
                 else if (levelCompleteButtons[1].contains(mousePos))
                 {
-                    engineAudio.stop();
-                    endscreen.stop();
-                    while (stateStack.size() > 0)
-                        stateStack.pop();
-                    stateStack.push(GameState::Home);
+                    stateManager->clear();
                 }
             }
-            else if (stateStack.top() == GameState::Paused)
+            else if (stateManager->getCurrentState() == GameState::Paused)
             {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
@@ -237,23 +226,16 @@ void Game::handleEvents()
                 // 1. Check CONTINUE Button (Index 0)
                 if (pauseScreenButtons[0].contains(mappedMousePos))
                 {
-                    stateStack.pop(); // Remove Pause state, resumes playing
-                    engineAudio.play();
+                    stateManager->pop();
                 }
                 // 2. Check EXIT TO MENU Button (Index 1)
                 else if (pauseScreenButtons[1].contains(mappedMousePos))
                 {
                     resetLevel();
-                    // Unwind the stack back down to the Home Screen
-                    while (stateStack.size() > 1)
-                    {
-                        stateStack.pop();
-                    }
-                    stateStack.push(GameState::Home);
-                    engineAudio.stop();
+                    stateManager->clear();
                 }
             }
-            else if (stateStack.top() == GameState::Playing)
+            else if (stateManager->getCurrentState() == GameState::Playing)
             {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
@@ -261,8 +243,7 @@ void Game::handleEvents()
                 // Check if player clicked the top-right HUD pause icon
                 if (graphics->getPauseButton().contains(mappedMousePos))
                 {
-                    stateStack.push(GameState::Paused);
-                    engineAudio.pause();
+                    stateManager->pushPause();
                 }
 
                 if (selectedMode != Gamemode::PVP && player1.isStuck() && graphics->getResetButton().contains(mappedMousePos))
@@ -282,7 +263,7 @@ void Game::handleEvents()
                     }
                 }
             }
-            else if (stateStack.top() == GameState::Settings)
+            else if (stateManager->getCurrentState() == GameState::Settings)
             {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
@@ -303,11 +284,11 @@ void Game::handleEvents()
                         }
                         else if (i == 7)
                         {
-                            audioMuted = !audioMuted;
+                            stateManager->toggleMute();
                         }
                         else if (i == 8)
                         {
-                            stateStack.pop();
+                            stateManager->pop();
                         }
                         break;
                     }
@@ -325,7 +306,7 @@ void Game::handleEvents()
         // FOR DEBUG ONLY, REMOVE LATER
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
         {
-            stateStack.push(GameState::LevelComplete);
+            stateManager->pushLevelComplete();
         }
     }
 }
@@ -355,7 +336,7 @@ void Game::handlePlayerMovement(float dt)
                 yInput = carInput::Down;
             }
             float targetVolume = player1.handleMovement(dt, xInput, yInput, track.getFriction());
-            if (!audioMuted)
+            if (stateManager->getCurrVol() != 0.f)
                 engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
         }
         else if (selectedMode == Gamemode::PVP)
@@ -401,7 +382,7 @@ void Game::handlePlayerMovement(float dt)
             float vol1 = player1.handleMovement(dt, p1x, p1y, track.getFriction());
             float vol2 = player2.handleMovement(dt, p2x, p2y, track.getFriction());
 
-            if (!audioMuted)
+            if (stateManager->getCurrVol() != 0.f)
             {
                 engineAudio.setVolume(lerp(engineAudio.getVolume(), (vol1 + vol2) / 2.f, 10.f * dt));
             }
@@ -410,7 +391,7 @@ void Game::handlePlayerMovement(float dt)
 }
 void Game::update(float dt)
 {
-    if (stateStack.top() == GameState::Playing)
+    if (stateManager->getCurrentState() == GameState::Playing)
     {
         std::sort(raceLeaderboard.begin(), raceLeaderboard.end(),
                   [this](Car *a, Car *b)
@@ -459,6 +440,8 @@ void Game::update(float dt)
                     continue;
                 cars[i]->updateStuckTime(dt);
                 cars[i]->updateITime(dt);
+                if (cars[i]->isStuck() && cars[i] != &player1)
+                    cars[i]->resetPosition(waypoints);
                 checkWinner(cars[i]);
             }
         }
@@ -478,16 +461,16 @@ bool Game::carPosition(const Car &a, const Car &b)
 void Game::render()
 {
     window.clear(sf::Color::Black);
-    if (stateStack.top() == GameState::Home)
+    if (stateManager->getCurrentState() == GameState::Home)
     {
         graphics->renderHomeScreen();
     }
-    else if (stateStack.top() == GameState::Playing)
+    else if (stateManager->getCurrentState() == GameState::Playing)
     {
         if (selectedMode == Gamemode::TimeTrial)
         {
             graphics->renderGamePlay(cars);
-            graphics->renderHUD(totalRaceTime, currentLap, totalLaps, currentLapTime, lapData);
+            graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps, currentLapTime, lapData);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
         }
@@ -507,7 +490,7 @@ void Game::render()
 
         graphics->renderMinimap(cars, selectedMode);
     }
-    else if (stateStack.top() == GameState::LevelComplete)
+    else if (stateManager->getCurrentState() == GameState::LevelComplete)
     {
         if (selectedMode == Gamemode::TimeTrial)
             graphics->renderLevelComplete(lapData, leaderboardManager.loadLapTimes());
@@ -520,13 +503,13 @@ void Game::render()
             graphics->renderAILvlComplete(player1, lapData, raceLeaderboard);
         }
     }
-    else if (stateStack.top() == GameState::Paused)
+    else if (stateManager->getCurrentState() == GameState::Paused)
     {
         graphics->renderPauseScreen();
     }
-    else if (stateStack.top() == GameState::Settings)
+    else if (stateManager->getCurrentState() == GameState::Settings)
     {
-        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, audioMuted);
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, stateManager->getCurrVol() == 0.f);
     }
 }
 
@@ -537,21 +520,18 @@ void Game::checkWinner(Car *player) // updateWaypoint handled here
         player->incrementLaps();
         if (player == &player1)
         {
-            currentLap++;
             lapData.totalTime += currentLapTime;
             if (currentLapTime < lapData.bestLap)
                 lapData.bestLap = currentLapTime;
             currentLapTime = 0.0f;
             lapData.laps++;
         }
-        if (player->getCurrLap() > totalLaps)
+        if (player1.getCurrLap() > totalLaps)
         {
             if (!player->isAI())
             {
-                engineAudio.pause();
-                endscreen.play();
                 leaderboardManager.saveLapTime(lapData);
-                stateStack.push(GameState::LevelComplete);
+                stateManager->pushLevelComplete();
             }
         }
     }

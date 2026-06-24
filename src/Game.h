@@ -13,12 +13,13 @@
 #include "Graphics.h"
 #include "CollisionHandler.h"
 #include "Leaderboard.h"
+#include "StateManager.h"
 
 class Game
 {
 
     Leaderboard leaderboardManager;
-    std::stack<GameState> stateStack;
+    std::unique_ptr<StateManager> stateManager;
     sf::RenderWindow window;
     sf::View gameView;
     Track track;
@@ -29,7 +30,6 @@ class Game
     sf::View hudView;
 
     float totalRaceTime;
-    int currentLap;
     int totalLaps;
     float currentLapTime;
     LapTime lapData;
@@ -39,13 +39,13 @@ class Game
 
     sf::Music engineAudio;
     sf::Music endscreen;
+    sf::Music homeAudio;
 
     std::unique_ptr<Graphics> graphics;
     std::unique_ptr<CollisionHandler> collisionHandler;
 
     int selectedLaps;
     int selectedCarLvl;
-    bool audioMuted;
 
     Gamemode selectedMode;
     std::vector<CarPreset> carPresets{CarPreset(300.f, 50.f), CarPreset(400.f, 100.f), CarPreset(500.f, 200.f)};

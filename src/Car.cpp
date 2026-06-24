@@ -21,11 +21,6 @@ Car::Car(float xp, float yp, float a, float s, float ms, float mrs, float ac)
 {
 }
 
-void Car::setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc)
-{
-    collisionChecker = cc;
-}
-
 void Car::load(const std::string &baseDir, const std::string &detailDir)
 {
     baseTexture.loadFromFile(baseDir);
@@ -65,20 +60,10 @@ void Car::setAngle(float a)
     syncSprites(position, angle);
 }
 
-void Car::setBodyColor(sf::Color color)
-{
-    baseSprite.setColor(color);
-}
-
 void Car::draw(sf::RenderWindow &window) const
 {
     window.draw(detailSprite); // Detail layer (white/unaffected)
     window.draw(baseSprite);   // Base layer (tinted)
-}
-
-sf::Vector2f Car::getDimensions() const
-{
-    return dimensions;
 }
 
 std::vector<sf::Vector2f> Car::getCorners(sf::Vector2f pos, float angle)
@@ -88,7 +73,7 @@ std::vector<sf::Vector2f> Car::getCorners(sf::Vector2f pos, float angle)
     t.rotate(angle);
 
     sf::FloatRect bounds = baseSprite.getLocalBounds();
-    float w = (bounds.width * baseSprite.getScale().x) / 2.2f;
+    float w = (bounds.width * baseSprite.getScale().x) / 2.6f;
     float hr = (bounds.height * baseSprite.getScale().y) * 0.3f;
     float hf = (bounds.height * baseSprite.getScale().y) * 0.6f;
 
@@ -106,7 +91,7 @@ std::vector<sf::Vector2f> Car::getCorners()
     t.rotate(angle);
 
     sf::FloatRect bounds = baseSprite.getLocalBounds();
-    float w = (bounds.width * baseSprite.getScale().x) / 2.2f;
+    float w = (bounds.width * baseSprite.getScale().x) / 2.6f;
     float hf = (bounds.height * baseSprite.getScale().y) * 0.3f;
     float hr = (bounds.height * baseSprite.getScale().y) * 0.6f;
 
@@ -129,62 +114,6 @@ void Car::decelerate(float dt)
     speed -= acc * 2 * dt;
     if (speed < maxReverseSpeed)
         speed = maxReverseSpeed;
-}
-
-sf::Vector2f Car::getPosition() const
-{
-    return position;
-}
-
-float Car::getAngle() const
-{
-    return angle;
-}
-
-float Car::getMaxSpeed() const
-{
-    return maxSpeed;
-}
-
-float Car::getCurrSpeed() const
-{
-    return speed;
-}
-
-void Car::setMaxSpeed(float ms)
-{
-    maxSpeed = ms;
-    maxTurnSpeed = ms * 0.9f;
-}
-
-void Car::setAcc(float a)
-{
-    acc = a;
-}
-
-float Car::getAcc() const
-{
-    return acc;
-}
-
-void Car::setCurrSpeed(float s)
-{
-    speed = s;
-}
-
-void Car::setMaxReverseSpeed(float mrs)
-{
-    maxReverseSpeed = mrs;
-}
-
-float Car::getMaxReverseSpeed() const
-{
-    return maxReverseSpeed;
-}
-
-float Car::getMaxTurnSpeed() const
-{
-    return maxTurnSpeed;
 }
 
 float Car::getTurnFactor() const
@@ -274,37 +203,12 @@ bool Car::updateWaypoint(const std::vector<Waypoint> &waypoints)
     return false;
 }
 
-int Car::getCurrWaypointIndex() const
-{
-    return currWaypointIndex;
-}
-
-void Car::resetWaypointIndex()
-{
-    currWaypointIndex = 0;
-}
-
-int Car::getCurrLap() const
-{
-    return currLap;
-}
-
-void Car::setCurrLap(int c)
-{
-    currLap = c;
-}
-
 void Car::updateStuckTime(float dt)
 {
     if (std::abs(getCurrSpeed()) < 10.f)
         stuckTime += dt;
     else
         stuckTime = 0.f;
-}
-
-bool Car::isStuck() const
-{
-    return stuckTime > maxStuckTime;
 }
 
 void Car::resetPosition(const std::vector<Waypoint> &waypoints)
@@ -323,65 +227,10 @@ void Car::resetPosition(const std::vector<Waypoint> &waypoints)
     setITime();
 }
 
-void Car::incrementLaps()
-{
-    currLap++;
-}
-
-int Car::getRacePos() const
-{
-    return racePos;
-}
-
-void Car::setRacePos(int i)
-{
-    racePos = i;
-}
-
-bool Car::getActive() const
-{
-    return isActive;
-}
-
-void Car::setActive(bool b)
-{
-    isActive = b;
-}
-
-void Car::setITime(float duration)
-{
-    iTime = duration;
-}
-
 void Car::updateITime(float dt)
 {
     if (iTime > 0.f)
         iTime -= dt;
-}
-
-float Car::isInvincible() const
-{
-    return iTime > 0.f;
-}
-
-float Car::getITime() const
-{
-    return iTime;
-}
-
-void Car::setAngularVelocity(float a)
-{
-    angularVelocity = a;
-}
-
-float Car::getAngularVelocity() const
-{
-    return angularVelocity;
-}
-
-void Car::addTurnAngularVelocity(float a)
-{
-    turnAngularVelocity = clamp(a, -maxTurnAngularVelocity, maxTurnAngularVelocity);
 }
 
 sf::Vector2f Car::getDirectionVector() const

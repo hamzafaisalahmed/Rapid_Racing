@@ -287,8 +287,11 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
     }
 
     // 5. Personal Player Stat (Highlighted in Cyan at the bottom of the list)
-    std::string personalStat = "Your Best Lap: " + formatRaceTime(lapData.bestLap);
-    drawTextCentered(personalStat, 600.f, 430.f, 22, sf::Color::Cyan);
+    if (lapData.laps > 0)
+    {
+        std::string personalStat = "Your Best Lap: " + formatRaceTime(lapData.bestLap);
+        drawTextCentered(personalStat, 600.f, 430.f, 22, sf::Color::Cyan);
+    }
 
     // 6. Styled Buttons
     levelCompleteButtons.clear();
@@ -523,7 +526,7 @@ void Graphics::renderPVPGameplay(Player &player2)
     float viewportsX[2] = {0.f, 0.5f};
 
     // Dynamic Clamping Math based on zoom level
-    const float zoomFactor = 0.4f;
+    const float zoomFactor = 0.3f;
     const float halfW = 300.f * zoomFactor; // 120.f
     const float halfH = 400.f * zoomFactor; // 160.f
 
@@ -715,7 +718,7 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
     float minimapHeight = minimapTexture.getSize().y * minimapScale;
 
     // Position based on mode
-    float minimapX = (mode == Gamemode::TimeTrial) ? (10.f) :     // Bottom-right for single player
+    float minimapX = (mode != Gamemode::PVP) ? (10.f) :           // Bottom-right for single player
                          ((1200.f / 2.f) - (minimapWidth / 2.f)); // Bottom-center for multiplayer
 
     float minimapY = 800.f - minimapHeight - 10.f;
@@ -736,7 +739,15 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
         if (!cars[i]->getActive())
             continue;
         sf::CircleShape dot(4.f);
-        dot.setFillColor(carColors[i]);
+
+        const sf::Uint8 lightnessBoost = 60;
+        sf::Color original = carColors[i];
+        sf::Color minimapColor(
+            std::min(255, original.r + lightnessBoost),
+            std::min(255, original.g + lightnessBoost),
+            std::min(255, original.b + lightnessBoost));
+
+        dot.setFillColor(minimapColor);
 
         sf::Vector2f minimapPos = cars[i]->getPosition() * minimapScale;
         minimapPos.x += minimapX;
@@ -790,7 +801,8 @@ void Graphics::renderAILvlComplete(Car &player, LapTime &lapData, const std::vec
     }
 
     // Shifted Best Lap down to 410.f to make room
-    drawTextCentered("Best Lap: " + formatRaceTime(lapData.bestLap), 600.f, 410.f, 22, sf::Color(160, 160, 170));
+    if (lapData.laps > 0)
+        drawTextCentered("Best Lap: " + formatRaceTime(lapData.bestLap), 600.f, 410.f, 22, sf::Color(160, 160, 170));
 
     // Live player position display
     drawTextCentered("Your Position: P" + std::to_string(player.getRacePos()), 600.f, 450.f, 22, sf::Color::Cyan);

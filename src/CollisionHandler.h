@@ -27,14 +27,14 @@ private:
     float degenAxisThreshold = 0.001f;
     float overlapPushFactor = 0.51f;
     float touchThreshold = 5.f;
-    float sideCollisionDamping = 0.5f;
+    float sideCollisionDamping = 0.3f;
     float headCollisionDamping = -0.7f;
     float impactScale = 1.1f;
     float wallPushMultiplier = 2.f;
     float tunnelingChecks = 5;
 
     float baseRestitution = 0.35f;
-    float torqueTurnFactor = 0.3f;
+    float torqueTurnFactor = 0.2f;
     float minThreshold = 0.0001f;
 
     float rightSpin = 1.f;

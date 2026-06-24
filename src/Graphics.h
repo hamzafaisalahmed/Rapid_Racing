@@ -38,17 +38,17 @@ class Graphics
 
     const std::vector<sf::Color> carColors = {
         // Extracted from your provided car textures
-        sf::Color(255, 215, 0), // Gold (car1.png)
-        sf::Color(220, 20, 60), // Race Red (car2.png)
+        sf::Color(198, 136, 1), // Gold (car1.png)
+        sf::Color(151, 0, 30),  // Race Red (car2.png)
 
-        // 7 Additional Unique Colors
-        sf::Color(0, 100, 255), // Electric Blue
-        sf::Color(50, 205, 50), // Lime Green
-        sf::Color(148, 0, 211), // Dark Violet
-        sf::Color(255, 140, 0), // Dark Orange
-        sf::Color(0, 255, 255), // Cyan
-        sf::Color(255, 0, 255), // Magenta
-        sf::Color(25, 25, 112)  // Midnight Blue
+        // 7 AI colors
+        sf::Color(151, 0, 30),    // red again
+        sf::Color(5, 8, 171),     // blue
+        sf::Color(13, 96, 6),     // green
+        sf::Color(0, 0, 0),       // black
+        sf::Color(255, 255, 255), // white
+        sf::Color(102, 29, 87),   // purple
+        sf::Color(54, 60, 80)     // idk silver blue
     };
 
 public:
