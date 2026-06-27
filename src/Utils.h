@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 
+const float BESTLAP_INIT_VAL = 999999;
 inline float lerp(float a, float b, float t) { return a + (b - a) * t; }
 
 inline float clamp(float a, float min, float max)
@@ -16,12 +17,11 @@ inline float clamp(float a, float min, float max)
 
 struct LapTime
 {
-    int id;
-    int laps;
+    std::string title;
     float bestLap;
-    float totalTime;
+    float currentLapTime;
 
-    LapTime() : id((int)std::time(0)), laps(0), bestLap(999999), totalTime(0) {}
+    LapTime() : bestLap(BESTLAP_INIT_VAL), currentLapTime(0) {}
 };
 
 enum class GameState

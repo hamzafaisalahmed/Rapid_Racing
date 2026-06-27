@@ -17,6 +17,8 @@ protected:
     sf::Sprite baseSprite;
     sf::Sprite detailSprite;
 
+    LapTime lapData;
+
     std::string title;
     sf::Vector2f position;
     sf::Vector2f dimensions;
@@ -61,7 +63,11 @@ public:
     void setAngle(float a);
 
     sf::Vector2f getPosition() const { return position; }
-    void setTitle(std::string s) { title = s; }
+    void setTitle(std::string s)
+    {
+        title = s;
+        lapData.title = s;
+    }
     std::string getTitle() const { return title; }
     float getAngle() const { return angle; }
     float getMaxSpeed() const { return maxSpeed; }
@@ -110,6 +116,28 @@ public:
     sf::Vector2f getPerpendicularVector() const;
 
     virtual bool isAI() const { return false; }
+
+    float getBestLapTime() const { return lapData.bestLap; }
+    void updateCurrentLapTime(float dt) { lapData.currentLapTime += dt; }
+    void resetCurrentLapTime()
+    {
+        if (lapData.currentLapTime < lapData.bestLap)
+            lapData.bestLap = lapData.currentLapTime;
+        lapData.currentLapTime = 0;
+    }
+    void resetAllLapTime()
+    {
+        lapData.currentLapTime = 0;
+        lapData.bestLap = BESTLAP_INIT_VAL;
+    }
+    float getCurrentLapTime() const { return lapData.currentLapTime; }
+    void updateCarTimes(float dt)
+    {
+        updateITime(dt);
+        updateCurrentLapTime(dt);
+        updateStuckTime(dt);
+    }
+    LapTime getLapData() const { return lapData; }
     virtual ~Car() = default;
 };
 

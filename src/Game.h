@@ -31,8 +31,8 @@ class Game
 
     float totalRaceTime;
     int totalLaps;
-    float currentLapTime;
-    LapTime lapData;
+    float bestLap;
+    Car *bestLapHolder;
     std::vector<Waypoint> waypoints;
 
     std::vector<Car *> cars;
@@ -53,6 +53,9 @@ class Game
 
     std::vector<Car *> raceLeaderboard;
 
+    bool countdownMode;
+    float countdownTime;
+
 public:
     void init();
     void run();
@@ -63,11 +66,12 @@ public:
     void handlePlayerMovement(float dt);
     void resetLevel();
     void checkWinner(Car *player);
+    void updateBestLap();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
     ~Game()
     {
-        for (int i = 2; i < aiCount; ++i)
+        for (size_t i = 2; i < cars.size(); ++i)
         {
             delete cars[i];
         }

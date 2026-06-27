@@ -9,6 +9,10 @@
 
 void Game::resetLevel()
 {
+    bestLap = BESTLAP_INIT_VAL;
+    bestLapHolder = nullptr;
+    countdownMode = true;
+    countdownTime = 3.f;
     raceLeaderboard.clear();
     const CarPreset &selected = carPresets[(size_t)selectedCarLvl];
     for (auto &car : cars)
@@ -20,9 +24,9 @@ void Game::resetLevel()
         car->setCurrSpeed(0.f);
         car->resetWaypointIndex();
         car->setCurrLap(1);
+        car->resetAllLapTime();
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
-    currentLapTime = 0.f;
     totalRaceTime = 0.f;
     const float y1 = 2550.f;
     const float y2 = 2600.f;
@@ -72,7 +76,6 @@ void Game::resetLevel()
             }
         }
     }
-    lapData = LapTime();
 }
 
 void Game::init()
@@ -393,18 +396,23 @@ void Game::update(float dt)
 {
     if (stateManager->getCurrentState() == GameState::Playing)
     {
+        if (countdownMode)
+        {
+            countdownTime -= dt;
+            if (countdownTime <= 0.01)
+                countdownMode = false;
+            return;
+        }
         std::sort(raceLeaderboard.begin(), raceLeaderboard.end(),
                   [this](Car *a, Car *b)
                   { return carPosition(*a, *b); });
 
         handlePlayerMovement(dt);
         totalRaceTime += dt;
-        currentLapTime += dt;
 
         if (selectedMode == Gamemode::TimeTrial)
         {
-            player1.updateStuckTime(dt);
-            player1.updateITime(dt);
+            player1.updateCarTimes(dt);
             checkWinner(&player1);
         }
 
@@ -415,8 +423,7 @@ void Game::update(float dt)
             {
                 if (!cars[i]->getActive())
                     continue;
-                cars[i]->updateStuckTime(dt);
-                cars[i]->updateITime(dt);
+                cars[i]->updateCarTimes(dt);
                 checkWinner(cars[i]);
             }
         }
@@ -438,8 +445,7 @@ void Game::update(float dt)
             {
                 if (!cars[i]->getActive())
                     continue;
-                cars[i]->updateStuckTime(dt);
-                cars[i]->updateITime(dt);
+                cars[i]->updateCarTimes(dt);
                 if (cars[i]->isStuck() && cars[i] != &player1)
                     cars[i]->resetPosition(waypoints);
                 checkWinner(cars[i]);
@@ -470,7 +476,7 @@ void Game::render()
         if (selectedMode == Gamemode::TimeTrial)
         {
             graphics->renderGamePlay(cars);
-            graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps, currentLapTime, lapData);
+            graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
         }
@@ -487,20 +493,26 @@ void Game::render()
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
         }
-
         graphics->renderMinimap(cars, selectedMode);
+        if (countdownMode)
+            graphics->renderCountdown(countdownTime);
     }
     else if (stateManager->getCurrentState() == GameState::LevelComplete)
     {
+        if (!bestLapHolder)
+        {
+            bestLapHolder = &player1;
+            bestLap = BESTLAP_INIT_VAL;
+        }
         if (selectedMode == Gamemode::TimeTrial)
-            graphics->renderLevelComplete(lapData, leaderboardManager.loadLapTimes());
+            graphics->renderLevelComplete(bestLapHolder->getLapData(), leaderboardManager.loadLapTimes());
         else if (selectedMode == Gamemode::PVP)
         {
             graphics->renderPVPLvlComplete(player2, raceLeaderboard);
         }
         else if (selectedMode == Gamemode::AI)
         {
-            graphics->renderAILvlComplete(player1, lapData, raceLeaderboard);
+            graphics->renderAILvlComplete(player1, bestLapHolder->getLapData(), raceLeaderboard);
         }
     }
     else if (stateManager->getCurrentState() == GameState::Paused)
@@ -518,19 +530,18 @@ void Game::checkWinner(Car *player) // updateWaypoint handled here
     if (player->updateWaypoint(waypoints))
     {
         player->incrementLaps();
-        if (player == &player1)
-        {
-            lapData.totalTime += currentLapTime;
-            if (currentLapTime < lapData.bestLap)
-                lapData.bestLap = currentLapTime;
-            currentLapTime = 0.0f;
-            lapData.laps++;
-        }
-        if (player1.getCurrLap() > totalLaps)
+        updateBestLap();
+        player->resetCurrentLapTime();
+        if (player1.getCurrLap() > totalLaps || (selectedMode == Gamemode::PVP && player2.getCurrLap() > totalLaps))
         {
             if (!player->isAI())
             {
-                leaderboardManager.saveLapTime(lapData);
+                if (bestLapHolder && !bestLapHolder->isAI())
+                {
+                    leaderboardManager.saveLapTime(bestLapHolder->getLapData());
+                }
+                else
+                    leaderboardManager.saveLapTime(player->getLapData());
                 stateManager->pushLevelComplete();
             }
         }
@@ -539,14 +550,20 @@ void Game::checkWinner(Car *player) // updateWaypoint handled here
 
 void Game::updateRacePositions()
 {
-    // std::vector<Car *> sorted = cars;
-
-    // std::sort(sorted.begin(), sorted.end(),
-    //           [this](Car *a, Car *b)
-    //           { return carPosition(*a, *b); });
-
     for (size_t i = 0; i < raceLeaderboard.size(); ++i)
     {
         raceLeaderboard[i]->setRacePos(i + 1);
+    }
+}
+
+void Game::updateBestLap()
+{
+    for (Car *car : cars)
+    {
+        if (car->getActive() && car->getCurrLap() > 0 && car->getBestLapTime() < bestLap)
+        {
+            bestLap = car->getBestLapTime();
+            bestLapHolder = car;
+        }
     }
 }

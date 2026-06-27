@@ -13,7 +13,6 @@ class Graphics
     sf::View &hudView;
 
     sf::Text timerText;
-    sf::Text lapText;
     sf::Text speedometer;
 
     sf::Sprite homeBackground;
@@ -22,6 +21,13 @@ class Graphics
     sf::Texture minimapTexture;
     sf::Sprite minimapSprite;
     const float minimapScale = 0.05f;
+
+    sf::Color standardFill;
+    sf::Color standardOutline;
+    sf::Color standardText;
+    sf::Color hoverFill;
+    sf::Color hoverOutline;
+    sf::Color hoverText;
 
     sf::Sprite pause;
     sf::Texture pauseTexture;
@@ -56,7 +62,7 @@ public:
 
     void init();
     void drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col);
-    void renderHUD(float elapsed, int currentLap, int totalLaps, float currentLapTime, const LapTime &lapData);
+    void renderHUD(float elapsed, int currentLap, int totalLaps);
     void renderHomeScreen();
     void renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes);
     void renderGamePlay(const std::vector<Car *> cars);
@@ -77,6 +83,8 @@ public:
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium);
     void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
-    void renderAILvlComplete(Car &player, LapTime &lapData, const std::vector<Car *> &podium);
+    void renderAILvlComplete(Car &player, const LapTime &lapData, const std::vector<Car *> &podium);
     void renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed);
+    void renderLevelCompleteButtons();
+    void renderCountdown(float countdownTimer);
 };

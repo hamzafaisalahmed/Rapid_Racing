@@ -8,11 +8,25 @@ class Leaderboard
 public:
     void saveLapTime(const LapTime &lt)
     {
-        std::ofstream file("scores.txt", std::ios::app);
+        if (lt.bestLap == BESTLAP_INIT_VAL)
+            return;
+        std::vector<LapTime> sortedTimes = loadLapTimes();
+        sortedTimes.push_back(lt);
+        std::sort(sortedTimes.begin(), sortedTimes.end(),
+                  [](const LapTime &a, const LapTime &b)
+                  { return a.bestLap < b.bestLap; });
+        // Optional: Keep only top 10
+        if (sortedTimes.size() > 10)
+            sortedTimes.resize(10);
+
+        // 4. Overwrite file
+        std::ofstream file("scores.txt", std::ios::trunc); // Use trunc to overwrite
         if (file.is_open())
         {
-            file << lt.id << " " << lt.laps << " "
-                 << lt.bestLap << " " << lt.totalTime << "\n";
+            for (const auto &t : sortedTimes)
+            {
+                file << t.title << " " << t.bestLap << "\n";
+            }
             file.close();
         }
     }
@@ -24,7 +38,7 @@ public:
         if (file.is_open())
         {
             LapTime lt;
-            while (file >> lt.id >> lt.laps >> lt.bestLap >> lt.totalTime)
+            while (file >> lt.title >> lt.bestLap)
                 times.push_back(lt);
             file.close();
         }
