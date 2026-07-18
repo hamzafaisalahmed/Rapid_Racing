@@ -297,6 +297,8 @@ void Graphics::renderGamePlay(const std::vector<Car *> cars)
     // gameView.setSize(static_cast<float>(trackSize.x), static_cast<float>(trackSize.y));
     // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
 
+    //============================================================================================
+
     sf::Vector2u trackSize = track.getSize();
     sf::Vector2f playerPos = player.getPosition();
     sf::Vector2f viewCenter = playerPos;
@@ -327,6 +329,7 @@ void Graphics::renderGamePlay(const std::vector<Car *> cars)
         cars[i]->draw(window);
     }
     debugPlayDisplay(&player);
+    debugAITarget(cars);
 }
 
 void Graphics::renderPauseScreen()
@@ -959,7 +962,7 @@ void Graphics::renderCountdown(float countdownTimer)
                                                            : (countdownTimer > 0.5f)   ? "1"
                                                                                        : "GO!";
 
-    sf::Color textColor = (countdownTimer > 0.0f) ? sf::Color::White : sf::Color::Green;
+    sf::Color textColor = (countdownTimer > 0.5f) ? sf::Color::White : sf::Color::Green;
 
     // 3. Draw text using your centralized helper
     // 600, 350 centers it horizontally and sets the vertical anchor
@@ -967,4 +970,203 @@ void Graphics::renderCountdown(float countdownTimer)
 
     // 4. Subtitle
     drawTextCentered("GET READY", 600.f, 460.f, 32, sf::Color(200, 200, 200));
+}
+
+void Graphics::debugAITarget(const std::vector<Car *> &cars)
+{
+    window.setView(gameView);
+    for (Car *c : cars)
+    {
+        if (!c->isAI() || !c->getActive())
+            continue;
+
+        AI *aiCar = static_cast<AI *>(c);
+        if (!aiCar->aiController)
+            continue;
+
+        sf::Vector2f target = aiCar->aiController->getDebugTargetPoint();
+
+        sf::CircleShape dot(5.f);
+        dot.setFillColor(sf::Color::Yellow);
+        dot.setPosition(target.x - 5.f, target.y - 5.f);
+        window.draw(dot);
+
+        sf::Vertex targetLine[] = {
+            sf::Vertex(c->getPosition(), sf::Color::Yellow),
+            sf::Vertex(target, sf::Color::Yellow)};
+        window.draw(targetLine, 2, sf::Lines);
+    }
+}
+
+// void Graphics::renderGamePlay(const std::vector<Car *> cars)
+// {
+//     sf::Vector2u trackSize = track.getSize();
+
+//     // Camera settings using static variables
+//     static float zoomLevel = 0.5f; // Start zoomed in more to see if it works
+//     static int spectateIndex = 2;
+//     static bool followAI = true;
+//     static sf::Clock tabCooldown;
+//     static sf::Clock fCooldown;
+//     static sf::Vector2f freeCamPos(0.f, 0.f);
+//     static bool initialized = false;
+
+//     if (!initialized)
+//     {
+//         freeCamPos = sf::Vector2f(trackSize.x / 2.f, trackSize.y / 2.f);
+//         initialized = true;
+//     }
+
+//     float moveSpeed = 20.0f;
+
+//     // Switch between AI cars
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
+//     {
+//         if (tabCooldown.getElapsedTime().asSeconds() > 0.3f)
+//         {
+//             spectateIndex++;
+//             if (spectateIndex >= static_cast<int>(cars.size()))
+//                 spectateIndex = 2;
+//             tabCooldown.restart();
+//         }
+//     }
+
+//     // Zoom controls - more aggressive zoom for testing
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+//     {
+//         zoomLevel -= 0.01f;
+//         if (zoomLevel < 0.2f)
+//             zoomLevel = 0.2f;
+//     }
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+//     {
+//         zoomLevel += 0.01f;
+//         if (zoomLevel > 3.0f)
+//             zoomLevel = 3.0f;
+//     }
+
+//     // Toggle follow mode
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
+//     {
+//         if (fCooldown.getElapsedTime().asSeconds() > 0.3f)
+//         {
+//             followAI = !followAI;
+//             fCooldown.restart();
+//         }
+//     }
+
+//     // Calculate view size based on zoom
+//     float viewWidth = trackSize.x * zoomLevel;
+//     float viewHeight = trackSize.y * zoomLevel;
+//     gameView.setSize(viewWidth, viewHeight);
+
+//     // Calculate view center
+//     sf::Vector2f viewCenter;
+
+//     if (followAI && spectateIndex < static_cast<int>(cars.size()) && cars[spectateIndex]->getActive())
+//     {
+//         viewCenter = cars[spectateIndex]->getPosition();
+//     }
+//     else
+//     {
+//         // Free camera mode
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+//             freeCamPos.x -= moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+//             freeCamPos.x += moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+//             freeCamPos.y -= moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+//             freeCamPos.y += moveSpeed;
+
+//         viewCenter = freeCamPos;
+//     }
+
+//     // Clamp to track bounds
+//     float halfWidth = viewWidth / 2.f;
+//     float halfHeight = viewHeight / 2.f;
+
+//     if (viewCenter.x - halfWidth < 0.f)
+//         viewCenter.x = halfWidth;
+//     if (viewCenter.x + halfWidth > trackSize.x)
+//         viewCenter.x = trackSize.x - halfWidth;
+//     if (viewCenter.y - halfHeight < 0.f)
+//         viewCenter.y = halfHeight;
+//     if (viewCenter.y + halfHeight > trackSize.y)
+//         viewCenter.y = trackSize.y - halfHeight;
+
+//     gameView.setCenter(viewCenter);
+
+//     window.setView(gameView);
+//     track.draw(window, sf::VideoMode::getDesktopMode());
+//     if (player.isInvincible())
+//     {
+//         if ((int)(player.getITime() * 10.f) % 2 != 0)
+//             player.draw(window);
+//     }
+//     else
+//         player.draw(window);
+//     for (size_t i = 2; i < cars.size(); i++)
+//     {
+//         if (!cars[i]->getActive())
+//             continue;
+//         cars[i]->draw(window);
+//     }
+//     debugPlayDisplay(&player);
+//     // debugAITarget(cars);
+// }
+
+void Graphics::debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints)
+{
+
+    // Force the window to interpret coordinates using the active camera tracking view
+    window.setView(gameView);
+
+    size_t totalPoints = std::min(waypoints.size(), wpHandler.data.size());
+
+    for (size_t i = 0; i < totalPoints; ++i)
+    {
+        const auto &aiData = wpHandler.data[i];
+        sf::Vector2f midPoint = waypoints[i].mid;
+
+        // 1. CURVATURE & CORNER ZONE VISUALIZER
+        sf::CircleShape trackNode(5.f);
+        trackNode.setOrigin(5.f, 5.f);
+        trackNode.setPosition(midPoint);
+
+        if (aiData.cornerZoneID == -1)
+        {
+            // Perfectly straight or below straightThreshold
+            trackNode.setFillColor(sf::Color::Green);
+        }
+        else
+        {
+            // Inside a recognized Corner Zone: Color it bright Red
+            // Optional: You could color the apex a distinct color (like Magenta)
+            trackNode.setFillColor(sf::Color::Red);
+        }
+        window.draw(trackNode);
+
+        // 2. MULTI-LANE BRAKING ZONE OVERLAY
+        // Calculate point coordinates across the track width to represent individual lanes
+        // Lane 0 = Left, Lane 1 = Mid, Lane 2 = Right
+        sf::Vector2f leftToRightVec = waypoints[i].right - waypoints[i].left;
+        float laneFractions[3] = {0.25f, 0.50f, 0.75f};
+
+        for (int lane = 0; lane < 3; ++lane)
+        {
+            if (aiData.brakeZone[lane])
+            {
+                // Interpolate along track segment width to plot the exact lane point
+                sf::Vector2f lanePos = waypoints[i].left + (leftToRightVec * laneFractions[lane]);
+
+                sf::CircleShape brakeIndicator(3.f);
+                brakeIndicator.setOrigin(3.f, 3.f);
+                brakeIndicator.setPosition(lanePos);
+                brakeIndicator.setFillColor(sf::Color::Cyan); // High visibility braking tint
+
+                window.draw(brakeIndicator);
+            }
+        }
+    }
 }

@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <functional>
 #include "AIController.h"
-
+#include "WaypointHandler.h"
 void Game::resetLevel()
 {
     bestLap = BESTLAP_INIT_VAL;
@@ -25,6 +25,13 @@ void Game::resetLevel()
         car->resetWaypointIndex();
         car->setCurrLap(1);
         car->resetAllLapTime();
+        // ── NEW: Reset AI controller state between races ──
+        if (car->isAI())
+        {
+            AI *aiCar = static_cast<AI *>(car);
+            if (aiCar->aiController)
+                aiCar->aiController->reset();
+        }
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
@@ -94,11 +101,15 @@ void Game::init()
     player2.setTitle("PL2");
     cars.push_back(&player1);
     cars.push_back(&player2);
-    for (size_t i = 0; i < (size_t)aiCount; i++)
+    for (size_t i = 0; i <
+                       // (size_t)aiCount
+                       1;
+         i++)
     {
         AI *newAi = new AI();
         newAi->load("assets/textures/detail.png", "assets/textures/base.png");
-        newAi->aiController = std::make_unique<AIController>(newAi, waypoints);
+        // ── PASS gridSlot as (int)i ──
+        newAi->aiController = std::make_unique<AIController>(newAi, waypoints, wpHandler, (int)i);
         newAi->setTitle("AI" + std::to_string(i + 1));
         cars.push_back(newAi);
     }
@@ -138,6 +149,29 @@ void Game::init()
 
     graphics->setCarColors(cars);
     stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio);
+    wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
+
+    for (size_t i = 0; i < wpHandler.cornerZones.size(); ++i)
+    {
+        const auto &z = wpHandler.cornerZones[i];
+        float totalStraightLen = 0.f; // rough: distance from prev zone end to this zone start
+        size_t prevEnd = (i == 0) ? wpHandler.cornerZones.back().end : wpHandler.cornerZones[i - 1].end;
+        size_t idx = (size_t)z.start;
+        while (idx != prevEnd)
+        {
+            size_t p = (idx == 0) ? waypoints.size() - 1 : idx - 1;
+            totalStraightLen += magnitude(waypoints[idx].mid - waypoints[p].mid);
+            idx = p;
+        }
+        float brakeDist = 60.f + 4.f * z.totalAngle;
+        std::cout << "Zone " << i << ": start=" << z.start << " apex=" << z.apex << " end=" << z.end
+                  << " totalAngle=" << z.totalAngle << " peakCurv=" << z.peakCurvature
+                  << " brakeDist=" << brakeDist << " availableStraight=" << totalStraightLen << "\n";
+    }
+    std::cout << "straightThreshold=" << wpHandler.straightThreshold << "\n";
+    for (int i = 53; i <= 61; ++i)
+        std::cout << "idx=" << i << " curvature=" << wpHandler.data[i].curvature
+                  << " zoneID=" << wpHandler.data[i].cornerZoneID << "\n";
     stateManager->pushHome();
 }
 
@@ -436,7 +470,7 @@ void Game::update(float dt)
                 AI *aiCar = static_cast<AI *>(cars[i]);
                 if (aiCar && aiCar->aiController)
                 {
-                    aiCar->aiController->update(cars, dt);
+                    aiCar->aiController->update(raceLeaderboard, dt);
                     aiCar->handleAIMovement(dt, track.getFriction());
                 }
             }
@@ -460,8 +494,17 @@ bool Game::carPosition(const Car &a, const Car &b)
         return a.getCurrLap() > b.getCurrLap();
     if (a.getCurrWaypointIndex() != b.getCurrWaypointIndex())
         return a.getCurrWaypointIndex() > b.getCurrWaypointIndex();
-    const Waypoint &w = waypoints[a.getCurrWaypointIndex()];
-    return distance(a.getPosition(), w.mid) < distance(b.getPosition(), w.mid);
+
+    int currIdx = a.getCurrWaypointIndex(); // same for both, guaranteed by the check above
+    int prevIdx = (currIdx == 0) ? 0 : currIdx - 1;
+    int dirIdx = (currIdx == 0) ? 1 : currIdx; // seam guard, same reasoning as getPassingOverrideTarget
+
+    sf::Vector2f segDir = normalize(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
+
+    float aProgress = dotProduct(a.getPosition() - waypoints[prevIdx].mid, segDir);
+    float bProgress = dotProduct(b.getPosition() - waypoints[prevIdx].mid, segDir);
+
+    return aProgress > bProgress;
 }
 
 void Game::render()
@@ -473,6 +516,7 @@ void Game::render()
     }
     else if (stateManager->getCurrentState() == GameState::Playing)
     {
+
         if (selectedMode == Gamemode::TimeTrial)
         {
             graphics->renderGamePlay(cars);
@@ -492,6 +536,7 @@ void Game::render()
             graphics->renderAIHUD(raceLeaderboard, totalLaps, totalRaceTime);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
+            graphics->debugWaypointAI(wpHandler, track.getWaypoints());
         }
         graphics->renderMinimap(cars, selectedMode);
         if (countdownMode)

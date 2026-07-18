@@ -14,7 +14,7 @@
 #include "CollisionHandler.h"
 #include "Leaderboard.h"
 #include "StateManager.h"
-
+#include "WaypointHandler.h"
 class Game
 {
 
@@ -55,6 +55,8 @@ class Game
 
     bool countdownMode;
     float countdownTime;
+
+    WaypointHandler wpHandler;
 
 public:
     void init();

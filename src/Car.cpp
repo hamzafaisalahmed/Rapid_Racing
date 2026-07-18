@@ -36,6 +36,11 @@ void Car::load(const std::string &baseDir, const std::string &detailDir)
     sf::Vector2f origin(baseTexture.getSize().x / 2.f, baseTexture.getSize().y * 0.65f);
     baseSprite.setOrigin(origin);
     detailSprite.setOrigin(origin);
+
+    sf::FloatRect bounds = baseSprite.getLocalBounds();
+    dimensions = sf::Vector2f(
+        bounds.width * 0.08f,
+        bounds.height * 0.08f);
 }
 
 void Car::syncSprites(sf::Vector2f p, float a)

@@ -4,6 +4,8 @@
 #include "Utils.h"
 #include "Car.h"
 #include "Track.h"
+#include "WaypointHandler.h"
+#include "AIController.h"
 
 class Graphics
 {
@@ -87,4 +89,8 @@ public:
     void renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed);
     void renderLevelCompleteButtons();
     void renderCountdown(float countdownTimer);
+
+    void debugAITarget(const std::vector<Car *> &cars);
+
+    void debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints);
 };

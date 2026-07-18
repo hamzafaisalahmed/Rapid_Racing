@@ -101,17 +101,6 @@ struct impactCarryover
     int index = -1;
 };
 
-struct AIConsts
-{
-    static constexpr float LOOKAHEAD_OFFSET = 3.f;
-    static constexpr float CORNER_THRESHOLD = 0.7f;
-    static constexpr float OVERTAKE_DETECTION_STRAIGHT = 400.f;
-    static constexpr float OVERTAKE_DETECTION_CORNER = 150.f;
-    static constexpr float IN_FRONT_THRESHOLD = 0.2f;
-    static constexpr float STEERING_DEADZONE = 0.05f;
-    static constexpr float SAFE_MARGIN = 5.0f;
-};
-
 // Vector math helpers
 inline float dotProduct(const sf::Vector2f &a, const sf::Vector2f &b)
 {

@@ -138,6 +138,12 @@ public:
         updateStuckTime(dt);
     }
     LapTime getLapData() const { return lapData; }
+    bool checkCollision(sf::Vector2f pos, float angle)
+    {
+        if (!collisionChecker)
+            return false;
+        return collisionChecker(this, pos, angle, position, angle, 0.f);
+    }
     virtual ~Car() = default;
 };
 
