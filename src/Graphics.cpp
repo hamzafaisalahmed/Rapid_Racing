@@ -63,22 +63,23 @@ void Graphics::init()
     //=====================================================================================
     settingsButtons.clear();
 
-    // Define all 9 button positions visually in a single vector
-    std::vector<sf::Vector2f> settingsPos = {
-        {220.f, 220.f}, {480.f, 220.f}, {740.f, 220.f}, // Indices 0-2: Levels (1, 2, 3)
-        {90.f, 400.f},
-        {350.f, 400.f},
-        {610.f, 400.f},
-        {870.f, 400.f}, // Indices 3-6: Laps (1, 2, 3, 5)
-        {480.f, 550.f}, // Index 7: Mute
-        {480.f, 650.f}  // Index 8: Return to Menu
-    };
+    // Indices 0-2: Levels (Y = 180, Width = 150)
+    for (int i = 0; i < 3; ++i)
+        settingsButtons.push_back(sf::FloatRect(355.f + (i * 170.f), 180.f, 150.f, 50.f));
 
-    // Populate the boundaries using the standard home button size
-    for (const auto &pos : settingsPos)
-    {
-        settingsButtons.push_back(sf::FloatRect(pos.x, pos.y, homeBtnSize.x, homeBtnSize.y));
-    }
+    // Indices 3-6: Laps (Y = 320, Width = 150)
+    for (int i = 0; i < 4; ++i)
+        settingsButtons.push_back(sf::FloatRect(270.f + (i * 170.f), 320.f, 150.f, 50.f));
+
+    // Indices 7-13: AI Count 1 to 7 (Y = 460, Width = 120)
+    for (int i = 0; i < 7; ++i)
+        settingsButtons.push_back(sf::FloatRect(150.f + (i * 130.f), 460.f, 120.f, 50.f));
+
+    // Index 14: Mute (Y = 580, Width = 240)
+    settingsButtons.push_back(sf::FloatRect(480.f, 580.f, 240.f, 50.f));
+
+    // Index 15: Return to Menu (Y = 660, Width = 240)
+    settingsButtons.push_back(sf::FloatRect(480.f, 660.f, 240.f, 50.f));
     // ========================================================
     // LEVEL COMPLETE BUTTONS
     // ========================================================
@@ -291,46 +292,46 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
     renderLevelCompleteButtons();
 }
 
-void Graphics::renderGamePlay(const std::vector<Car *> cars)
-{
-    // sf::Vector2u trackSize = track.getSize();
-    // gameView.setSize(static_cast<float>(trackSize.x), static_cast<float>(trackSize.y));
-    // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
+// void Graphics::renderGamePlay(const std::vector<Car *> cars)
+// {
+//     // sf::Vector2u trackSize = track.getSize();
+//     // gameView.setSize(static_cast<float>(trackSize.x), static_cast<float>(trackSize.y));
+//     // gameView.setCenter(trackSize.x / 2.f, trackSize.y / 2.f);
 
-    //============================================================================================
+//     //============================================================================================
 
-    sf::Vector2u trackSize = track.getSize();
-    sf::Vector2f playerPos = player.getPosition();
-    sf::Vector2f viewCenter = playerPos;
-    float viewWidth = gameView.getSize().x;
-    float viewHeight = gameView.getSize().y;
-    if (viewCenter.x - viewWidth / 2.f < 0.f)
-        viewCenter.x = viewWidth / 2.f;
-    if (viewCenter.x + viewWidth / 2.f > trackSize.x)
-        viewCenter.x = trackSize.x - viewWidth / 2.f;
-    if (viewCenter.y - viewHeight / 2.f < 0.f)
-        viewCenter.y = viewHeight / 2.f;
-    if (viewCenter.y + viewHeight / 2.f > trackSize.y)
-        viewCenter.y = trackSize.y - viewHeight / 2.f;
-    gameView.setCenter(viewCenter);
-    window.setView(gameView);
-    track.draw(window, sf::VideoMode::getDesktopMode());
-    if (player.isInvincible())
-    {
-        if ((int)(player.getITime() * 10.f) % 2 != 0)
-            player.draw(window);
-    }
-    else
-        player.draw(window);
-    for (size_t i = 2; i < cars.size(); i++)
-    {
-        if (!cars[i]->getActive())
-            continue;
-        cars[i]->draw(window);
-    }
-    debugPlayDisplay(&player);
-    debugAITarget(cars);
-}
+//     sf::Vector2u trackSize = track.getSize();
+//     sf::Vector2f playerPos = player.getPosition();
+//     sf::Vector2f viewCenter = playerPos;
+//     float viewWidth = gameView.getSize().x;
+//     float viewHeight = gameView.getSize().y;
+//     if (viewCenter.x - viewWidth / 2.f < 0.f)
+//         viewCenter.x = viewWidth / 2.f;
+//     if (viewCenter.x + viewWidth / 2.f > trackSize.x)
+//         viewCenter.x = trackSize.x - viewWidth / 2.f;
+//     if (viewCenter.y - viewHeight / 2.f < 0.f)
+//         viewCenter.y = viewHeight / 2.f;
+//     if (viewCenter.y + viewHeight / 2.f > trackSize.y)
+//         viewCenter.y = trackSize.y - viewHeight / 2.f;
+//     gameView.setCenter(viewCenter);
+//     window.setView(gameView);
+//     track.draw(window, sf::VideoMode::getDesktopMode());
+//     if (player.isInvincible())
+//     {
+//         if ((int)(player.getITime() * 10.f) % 2 != 0)
+//             player.draw(window);
+//     }
+//     else
+//         player.draw(window);
+//     for (size_t i = 2; i < cars.size(); i++)
+//     {
+//         if (!cars[i]->getActive())
+//             continue;
+//         cars[i]->draw(window);
+//     }
+//     debugPlayDisplay(&player);
+//     debugAITarget(cars);
+// }
 
 void Graphics::renderPauseScreen()
 {
@@ -428,7 +429,7 @@ void Graphics::renderResetButton(Gamemode mode, bool p1, bool p2)
     }
 }
 
-void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted)
+void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted)
 {
     window.setView(hudView);
     window.clear(sf::Color(20, 20, 25));
@@ -438,36 +439,38 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
 
     // Static Page Text
     drawTextCentered("SETTINGS", 600.f, 50.f, 45, sf::Color::White);
-    drawTextCentered("CAR PERFORMANCE PRESET", 600.f, 170.f, 22, sf::Color(200, 200, 200));
-    drawTextCentered("RACE LAPS", 600.f, 350.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("CAR PERFORMANCE PRESET", 600.f, 140.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("RACE LAPS", 600.f, 280.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("NUMBER OF AI OPPONENTS", 600.f, 420.f, 22, sf::Color(200, 200, 200));
 
-    // Parallel Arrays mapping exactly to the 9 settingsButtons indices
+    // 16 Labels total
     std::string labels[] = {
         "LEVEL 1", "LEVEL 2", "LEVEL 3",
         "1 LAP", "2 LAPS", "3 LAPS", "5 LAPS",
+        "1", "2", "3", "4", "5", "6", "7",
         isMuted ? "AUDIO: MUTED" : "AUDIO: ON",
         "RETURN TO MENU"};
 
-    // Evaluates all configuration conditions instantly without nested logic
+    // Evaluate all 16 configuration conditions instantly
     bool activeStates[] = {
         currentLevel == 0, currentLevel == 1, currentLevel == 2,
         currentLaps == 0, currentLaps == 1, currentLaps == 2, currentLaps == 3,
+        currentAiCount == 1, currentAiCount == 2, currentAiCount == 3, currentAiCount == 4, currentAiCount == 5, currentAiCount == 6, currentAiCount == 7,
         isMuted,
-        false // Return button is never "toggled" on
-    };
+        false};
 
-    // The single, ultra-clean rendering loop
+    // The rendering loop
     for (size_t i = 0; i < settingsButtons.size(); ++i)
     {
         sf::FloatRect rect = settingsButtons[i];
 
-        sf::RectangleShape button(homeBtnSize);
+        // Draw using the unique bounds set in init() instead of a hardcoded homeBtnSize
+        sf::RectangleShape button(sf::Vector2f(rect.width, rect.height));
         button.setPosition(rect.left, rect.top);
 
         bool isHovered = rect.contains(mappedMousePos);
         bool isActive = activeStates[i];
 
-        // Apply dynamic styling
         button.setFillColor(isActive ? hoverFill : standardFill);
 
         if (isHovered)
@@ -998,123 +1001,123 @@ void Graphics::debugAITarget(const std::vector<Car *> &cars)
     }
 }
 
-// void Graphics::renderGamePlay(const std::vector<Car *> cars)
-// {
-//     sf::Vector2u trackSize = track.getSize();
+void Graphics::renderGamePlay(const std::vector<Car *> cars)
+{
+    sf::Vector2u trackSize = track.getSize();
 
-//     // Camera settings using static variables
-//     static float zoomLevel = 0.5f; // Start zoomed in more to see if it works
-//     static int spectateIndex = 2;
-//     static bool followAI = true;
-//     static sf::Clock tabCooldown;
-//     static sf::Clock fCooldown;
-//     static sf::Vector2f freeCamPos(0.f, 0.f);
-//     static bool initialized = false;
+    // Camera settings using static variables
+    static float zoomLevel = 0.5f; // Start zoomed in more to see if it works
+    static int spectateIndex = 2;
+    static bool followAI = true;
+    static sf::Clock tabCooldown;
+    static sf::Clock fCooldown;
+    static sf::Vector2f freeCamPos(0.f, 0.f);
+    static bool initialized = false;
 
-//     if (!initialized)
-//     {
-//         freeCamPos = sf::Vector2f(trackSize.x / 2.f, trackSize.y / 2.f);
-//         initialized = true;
-//     }
+    if (!initialized)
+    {
+        freeCamPos = sf::Vector2f(trackSize.x / 2.f, trackSize.y / 2.f);
+        initialized = true;
+    }
 
-//     float moveSpeed = 20.0f;
+    float moveSpeed = 20.0f;
 
-//     // Switch between AI cars
-//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
-//     {
-//         if (tabCooldown.getElapsedTime().asSeconds() > 0.3f)
-//         {
-//             spectateIndex++;
-//             if (spectateIndex >= static_cast<int>(cars.size()))
-//                 spectateIndex = 2;
-//             tabCooldown.restart();
-//         }
-//     }
+    // Switch between AI cars
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
+    {
+        if (tabCooldown.getElapsedTime().asSeconds() > 0.3f)
+        {
+            spectateIndex++;
+            if (spectateIndex >= static_cast<int>(cars.size()))
+                spectateIndex = 2;
+            tabCooldown.restart();
+        }
+    }
 
-//     // Zoom controls - more aggressive zoom for testing
-//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
-//     {
-//         zoomLevel -= 0.01f;
-//         if (zoomLevel < 0.2f)
-//             zoomLevel = 0.2f;
-//     }
-//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-//     {
-//         zoomLevel += 0.01f;
-//         if (zoomLevel > 3.0f)
-//             zoomLevel = 3.0f;
-//     }
+    // Zoom controls - more aggressive zoom for testing
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+    {
+        zoomLevel -= 0.01f;
+        if (zoomLevel < 0.2f)
+            zoomLevel = 0.2f;
+    }
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+    {
+        zoomLevel += 0.01f;
+        if (zoomLevel > 3.0f)
+            zoomLevel = 3.0f;
+    }
 
-//     // Toggle follow mode
-//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
-//     {
-//         if (fCooldown.getElapsedTime().asSeconds() > 0.3f)
-//         {
-//             followAI = !followAI;
-//             fCooldown.restart();
-//         }
-//     }
+    // Toggle follow mode
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
+    {
+        if (fCooldown.getElapsedTime().asSeconds() > 0.3f)
+        {
+            followAI = !followAI;
+            fCooldown.restart();
+        }
+    }
 
-//     // Calculate view size based on zoom
-//     float viewWidth = trackSize.x * zoomLevel;
-//     float viewHeight = trackSize.y * zoomLevel;
-//     gameView.setSize(viewWidth, viewHeight);
+    // Calculate view size based on zoom
+    float viewWidth = trackSize.x * zoomLevel;
+    float viewHeight = trackSize.y * zoomLevel;
+    gameView.setSize(viewWidth, viewHeight);
 
-//     // Calculate view center
-//     sf::Vector2f viewCenter;
+    // Calculate view center
+    sf::Vector2f viewCenter;
 
-//     if (followAI && spectateIndex < static_cast<int>(cars.size()) && cars[spectateIndex]->getActive())
-//     {
-//         viewCenter = cars[spectateIndex]->getPosition();
-//     }
-//     else
-//     {
-//         // Free camera mode
-//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-//             freeCamPos.x -= moveSpeed;
-//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-//             freeCamPos.x += moveSpeed;
-//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-//             freeCamPos.y -= moveSpeed;
-//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-//             freeCamPos.y += moveSpeed;
+    if (followAI && spectateIndex < static_cast<int>(cars.size()) && cars[spectateIndex]->getActive())
+    {
+        viewCenter = cars[spectateIndex]->getPosition();
+    }
+    else
+    {
+        // Free camera mode
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+            freeCamPos.x -= moveSpeed;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+            freeCamPos.x += moveSpeed;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+            freeCamPos.y -= moveSpeed;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+            freeCamPos.y += moveSpeed;
 
-//         viewCenter = freeCamPos;
-//     }
+        viewCenter = freeCamPos;
+    }
 
-//     // Clamp to track bounds
-//     float halfWidth = viewWidth / 2.f;
-//     float halfHeight = viewHeight / 2.f;
+    // Clamp to track bounds
+    float halfWidth = viewWidth / 2.f;
+    float halfHeight = viewHeight / 2.f;
 
-//     if (viewCenter.x - halfWidth < 0.f)
-//         viewCenter.x = halfWidth;
-//     if (viewCenter.x + halfWidth > trackSize.x)
-//         viewCenter.x = trackSize.x - halfWidth;
-//     if (viewCenter.y - halfHeight < 0.f)
-//         viewCenter.y = halfHeight;
-//     if (viewCenter.y + halfHeight > trackSize.y)
-//         viewCenter.y = trackSize.y - halfHeight;
+    if (viewCenter.x - halfWidth < 0.f)
+        viewCenter.x = halfWidth;
+    if (viewCenter.x + halfWidth > trackSize.x)
+        viewCenter.x = trackSize.x - halfWidth;
+    if (viewCenter.y - halfHeight < 0.f)
+        viewCenter.y = halfHeight;
+    if (viewCenter.y + halfHeight > trackSize.y)
+        viewCenter.y = trackSize.y - halfHeight;
 
-//     gameView.setCenter(viewCenter);
+    gameView.setCenter(viewCenter);
 
-//     window.setView(gameView);
-//     track.draw(window, sf::VideoMode::getDesktopMode());
-//     if (player.isInvincible())
-//     {
-//         if ((int)(player.getITime() * 10.f) % 2 != 0)
-//             player.draw(window);
-//     }
-//     else
-//         player.draw(window);
-//     for (size_t i = 2; i < cars.size(); i++)
-//     {
-//         if (!cars[i]->getActive())
-//             continue;
-//         cars[i]->draw(window);
-//     }
-//     debugPlayDisplay(&player);
-//     // debugAITarget(cars);
-// }
+    window.setView(gameView);
+    track.draw(window, sf::VideoMode::getDesktopMode());
+    if (player.isInvincible())
+    {
+        if ((int)(player.getITime() * 10.f) % 2 != 0)
+            player.draw(window);
+    }
+    else
+        player.draw(window);
+    for (size_t i = 2; i < cars.size(); i++)
+    {
+        if (!cars[i]->getActive())
+            continue;
+        cars[i]->draw(window);
+    }
+    debugPlayDisplay(&player);
+    // debugAITarget(cars);
+}
 
 void Graphics::debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints)
 {

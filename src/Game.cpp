@@ -75,10 +75,22 @@ void Game::resetLevel()
         {
             if (i == 1)
                 cars[i]->setActive(false);
+            else if (i >= 2)
+            {
+                // AI cars start at index 2 — only activate the first selectedAiCount of them
+                int aiIndex = (int)i - 2;
+                bool shouldBeActive = (aiIndex < selectedAICount);
+                cars[i]->setActive(shouldBeActive);
+                if (shouldBeActive)
+                {
+                    cars[i]->setRacePos((int)raceLeaderboard.size() + 1);
+                    raceLeaderboard.push_back(cars[i]);
+                }
+            }
             else
             {
                 cars[i]->setActive(true);
-                cars[i]->setRacePos(i + 1);
+                cars[i]->setRacePos((int)raceLeaderboard.size() + 1);
                 raceLeaderboard.push_back(cars[i]);
             }
         }
@@ -101,9 +113,7 @@ void Game::init()
     player2.setTitle("PL2");
     cars.push_back(&player1);
     cars.push_back(&player2);
-    for (size_t i = 0; i <
-                       // (size_t)aiCount
-                       1;
+    for (size_t i = 0; i < (size_t)selectedAICount;
          i++)
     {
         AI *newAi = new AI();
@@ -111,6 +121,7 @@ void Game::init()
         // ── PASS gridSlot as (int)i ──
         newAi->aiController = std::make_unique<AIController>(newAi, waypoints, wpHandler, (int)i);
         newAi->setTitle("AI" + std::to_string(i + 1));
+        newAi->aiController->setPreferredLane(static_cast<TargetSide>(std::rand() % 3));
         cars.push_back(newAi);
     }
 
@@ -319,11 +330,15 @@ void Game::handleEvents()
                         {
                             selectedLaps = i - 3;
                         }
-                        else if (i == 7)
+                        else if (i <= 13) // New AI Array block
+                        {
+                            selectedAICount = (i - 7) + 1; // Shifts index 7 back to 1 AI
+                        }
+                        else if (i == 14) // Mute moved from 7 to 14
                         {
                             stateManager->toggleMute();
                         }
-                        else if (i == 8)
+                        else if (i == 15) // Menu moved from 8 to 15
                         {
                             stateManager->pop();
                         }
@@ -566,7 +581,7 @@ void Game::render()
     }
     else if (stateManager->getCurrentState() == GameState::Settings)
     {
-        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, stateManager->getCurrVol() == 0.f);
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, selectedAICount, stateManager->getCurrVol() == 0.f);
     }
 }
 

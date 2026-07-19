@@ -79,7 +79,7 @@ public:
     const sf::FloatRect &getPauseButton() const { return pauseButton; }
     const sf::FloatRect &getResetButton() const { return resetButton; }
     void renderResetButton(Gamemode mode, bool p1 = false, bool p2 = false);
-    void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
+    void renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted);
     void setCarColors(const std::vector<Car *> cars);
     void renderPVPGameplay(Player &player2);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);

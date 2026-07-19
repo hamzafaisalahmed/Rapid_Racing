@@ -162,16 +162,16 @@ void AIController::update(const std::vector<Car *> &cars, float dt)
         car->setAcc(baseAcc * passBoostMul);
     else
         car->setAcc(baseAcc);
-    std::cout << "Current state: " << (state == AIState::Cruising ? "Cruising" : state == AIState::Following ? "Following"
-                                                                                                             : "Passing")
-              << std::endl;
-    std::cout << "Current index: " << car->getCurrWaypointIndex() << std::endl;
-    std::cout << "Corner zone: " << wpHandler.data[car->getCurrWaypointIndex()].cornerZoneID << std::endl;
-    std::cout << "Debug target point: (" << debugTargetPoint.x << ", " << debugTargetPoint.y << ")" << std::endl;
-    std::cout << "Current Lane: " << (currentLane == TargetSide::Left ? "Left" : currentLane == TargetSide::Mid ? "Mid"
-                                                                                                                : "Right")
-              << std::endl;
-    std::cout << "Car infront: " << (carAhead ? "Yes" : "No") << std::endl;
+    // std::cout << "Current state: " << (state == AIState::Cruising ? "Cruising" : state == AIState::Following ? "Following"
+    //                                                                                                          : "Passing")
+    //           << std::endl;
+    // std::cout << "Current index: " << car->getCurrWaypointIndex() << std::endl;
+    // std::cout << "Corner zone: " << wpHandler.data[car->getCurrWaypointIndex()].cornerZoneID << std::endl;
+    // std::cout << "Debug target point: (" << debugTargetPoint.x << ", " << debugTargetPoint.y << ")" << std::endl;
+    // std::cout << "Current Lane: " << (currentLane == TargetSide::Left ? "Left" : currentLane == TargetSide::Mid ? "Mid"
+    //                                                                                                             : "Right")
+    //           << std::endl;
+    // std::cout << "Car infront: " << (carAhead ? "Yes" : "No") << std::endl;
 }
 
 // AIController.cpp

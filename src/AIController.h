@@ -25,6 +25,7 @@ public:
     carInput getHorizontalInput() const { return horizontalInput; }
     carInput getVerticalInput() const { return verticalInput; }
     sf::Vector2f getDebugTargetPoint() const { return debugTargetPoint; }
+    void setPreferredLane(TargetSide lane) { preferredLane = lane; }
 
 private:
     float laneBlockedTime = 0.f;
@@ -38,8 +39,8 @@ private:
     const std::vector<Waypoint> &waypoints;
     const WaypointHandler &wpHandler;
     int gridSlot;
-
     TargetSide preferredLane = TargetSide::Mid;
+
     TargetSide currentLane = TargetSide::Mid;
 
     carInput horizontalInput = carInput::None;
@@ -79,7 +80,7 @@ private:
     const int stuckIndexWindow = 6; // how many waypoints of no progress before triggering a pass
 
     float baseAcc = 0.f;
-    const float passBoostMul = 1.15f;
+    const float passBoostMul = 1.5f;
 
     // AIController.h
     sf::Vector2f passingLastPos;

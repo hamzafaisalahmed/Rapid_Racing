@@ -26,7 +26,8 @@ class Game
 
     Player player1;
     Player player2;
-    const int aiCount = 7;
+    int selectedAICount = 7;
+    const int maxAICount = 7;
     sf::View hudView;
 
     float totalRaceTime;

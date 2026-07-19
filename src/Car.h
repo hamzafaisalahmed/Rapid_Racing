@@ -159,7 +159,6 @@ class AI : public Car
 {
 public:
     std::unique_ptr<AIController> aiController;
-    TargetSide targetSide = TargetSide::Mid;
     AI(float xp, float yp, float a, float s, float ms, float mrs, float ac);
     AI();
     float handleAIMovement(float dt, float friction);
