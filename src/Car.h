@@ -43,6 +43,7 @@ protected:
     const float maxTurnAngularVelocity = 360.f;
 
     void syncSprites(sf::Vector2f p, float a);
+    bool finishedRace = false;
 
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac);
@@ -53,7 +54,8 @@ public:
     sf::Vector2f getDimensions() const { return dimensions; }
     std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle);
     std::vector<sf::Vector2f> getCorners();
-
+    bool isFinishedRace() const { return finishedRace; }
+    void setFinishedRace(bool b) { finishedRace = b; }
     void accelerate(float dt);
     void decelerate(float dt);
 
@@ -144,6 +146,9 @@ public:
             return false;
         return collisionChecker(this, pos, angle, position, angle, 0.f);
     }
+    virtual TargetSide getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const;
+
+    virtual AIController *getAIController() const { return nullptr; }
     virtual ~Car() = default;
 };
 
@@ -163,4 +168,6 @@ public:
     AI();
     float handleAIMovement(float dt, float friction);
     bool isAI() const override { return true; }
+    TargetSide getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const override;
+    AIController *getAIController() const override;
 };

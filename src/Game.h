@@ -59,6 +59,14 @@ class Game
 
     WaypointHandler wpHandler;
 
+    int finishedCount = 0;
+    int totalRacers = 0;
+
+    bool aiSpectatorMode = false;
+    bool spectatorModeToggled = false;
+    Car *spectatorTarget = nullptr;
+    Car *findSpectatorTarget(Car *curr);
+
 public:
     void init();
     void run();
@@ -68,7 +76,7 @@ public:
     void handleEvents();
     void handlePlayerMovement(float dt);
     void resetLevel();
-    void checkWinner(Car *player);
+    void checkWinner(Car *car);
     void updateBestLap();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);

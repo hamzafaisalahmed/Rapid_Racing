@@ -89,6 +89,8 @@ struct CarCollisionResult
     bool hit = false;
     int car1Index = -1; // Which side of car1 hit
     int car2Index = -1; // Which side of car2 hit
+    float minOverlap = 0.f;
+    sf::Vector2f translationAxis;
 };
 
 struct impactCarryover

@@ -22,7 +22,7 @@ private:
     impactCarryover handleCollisionResponse(int index, Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt) const;
     void applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *car2, const CarCollisionResult &result);
     float distancePointToSegment(sf::Vector2f p, sf::Vector2f a, sf::Vector2f b) const;
-    void resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1);
+    void resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1, const CarCollisionResult &result);
 
     float degenAxisThreshold = 0.001f;
     float overlapPushFactor = 0.51f;

@@ -2,83 +2,83 @@
 #include <algorithm>
 #include <cmath>
 
-void CollisionHandler::resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
-{
+// void CollisionHandler::resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1)
+// {
 
-    // SAT
-    auto corners1 = car1->getCorners(pos1, car1->getAngle());
-    auto corners2 = car2->getCorners(car2->getPosition(), car2->getAngle());
+//     // SAT
+//     auto corners1 = car1->getCorners(pos1, car1->getAngle());
+//     auto corners2 = car2->getCorners(car2->getPosition(), car2->getAngle());
 
-    // 1. Define the 4 unique axes of the two rectangular cars (2 from each car)
-    // We get these by taking two perpendicular edges from each bounding box
-    sf::Vector2f axes[4];
-    axes[0] = corners1[1] - corners1[0]; // Car 1 Width Axis
-    axes[1] = corners1[2] - corners1[0]; // Car 1 Length Axis
-    axes[2] = corners2[1] - corners2[0]; // Car 2 Width Axis
-    axes[3] = corners2[2] - corners2[0]; // Car 2 Length Axis
+//     // 1. Define the 4 unique axes of the two rectangular cars (2 from each car)
+//     // We get these by taking two perpendicular edges from each bounding box
+//     sf::Vector2f axes[4];
+//     axes[0] = corners1[1] - corners1[0]; // Car 1 Width Axis
+//     axes[1] = corners1[2] - corners1[0]; // Car 1 Length Axis
+//     axes[2] = corners2[1] - corners2[0]; // Car 2 Width Axis
+//     axes[3] = corners2[2] - corners2[0]; // Car 2 Length Axis
 
-    float minOverlap = std::numeric_limits<float>::max();
-    sf::Vector2f translationAxis;
+//     float minOverlap = std::numeric_limits<float>::max();
+//     sf::Vector2f translationAxis;
 
-    // 2. Test the projection of both cars along all 4 axes
-    for (int i = 0; i < 4; i++)
-    {
-        // Normalize the axis
-        float len = std::sqrt(axes[i].x * axes[i].x + axes[i].y * axes[i].y);
-        if (len < degenAxisThreshold)
-            continue;
-        sf::Vector2f axis = axes[i] / len;
+//     // 2. Test the projection of both cars along all 4 axes
+//     for (int i = 0; i < 4; i++)
+//     {
+//         // Normalize the axis
+//         float len = std::sqrt(axes[i].x * axes[i].x + axes[i].y * axes[i].y);
+//         if (len < degenAxisThreshold)
+//             continue;
+//         sf::Vector2f axis = axes[i] / len;
 
-        // Project all 4 corners of Car 1 onto this axis to find its bounds
-        float min1 = (corners1[0].x * axis.x) + (corners1[0].y * axis.y);
-        float max1 = min1;
-        for (int j = 1; j < 4; j++)
-        {
-            float proj = (corners1[j].x * axis.x) + (corners1[j].y * axis.y);
-            min1 = std::min(min1, proj);
-            max1 = std::max(max1, proj);
-        }
+//         // Project all 4 corners of Car 1 onto this axis to find its bounds
+//         float min1 = (corners1[0].x * axis.x) + (corners1[0].y * axis.y);
+//         float max1 = min1;
+//         for (int j = 1; j < 4; j++)
+//         {
+//             float proj = (corners1[j].x * axis.x) + (corners1[j].y * axis.y);
+//             min1 = std::min(min1, proj);
+//             max1 = std::max(max1, proj);
+//         }
 
-        // Project all 4 corners of Car 2 onto this axis
-        float min2 = (corners2[0].x * axis.x) + (corners2[0].y * axis.y);
-        float max2 = min2;
-        for (int j = 1; j < 4; j++)
-        {
-            float proj = (corners2[j].x * axis.x) + (corners2[j].y * axis.y);
-            min2 = std::min(min2, proj);
-            max2 = std::max(max2, proj);
-        }
+//         // Project all 4 corners of Car 2 onto this axis
+//         float min2 = (corners2[0].x * axis.x) + (corners2[0].y * axis.y);
+//         float max2 = min2;
+//         for (int j = 1; j < 4; j++)
+//         {
+//             float proj = (corners2[j].x * axis.x) + (corners2[j].y * axis.y);
+//             min2 = std::min(min2, proj);
+//             max2 = std::max(max2, proj);
+//         }
 
-        // Calculate how much the two projections overlap
-        float overlap = std::min(max1, max2) - std::max(min1, min2);
+//         // Calculate how much the two projections overlap
+//         float overlap = std::min(max1, max2) - std::max(min1, min2);
 
-        // If there is no overlap on even ONE axis, they are not colliding at all
-        if (overlap <= 0.f)
-            return;
+//         // If there is no overlap on even ONE axis, they are not colliding at all
+//         if (overlap <= 0.f)
+//             return;
 
-        // Track the axis with the absolute smallest overlap (the path of least resistance)
-        if (overlap < minOverlap)
-        {
-            minOverlap = overlap;
-            translationAxis = axis;
-        }
-    }
+//         // Track the axis with the absolute smallest overlap (the path of least resistance)
+//         if (overlap < minOverlap)
+//         {
+//             minOverlap = overlap;
+//             translationAxis = axis;
+//         }
+//     }
 
-    // 3. Ensure our final displacement vector points from Car 2 toward Car 1
-    sf::Vector2f centerToCenter = pos1 - car2->getPosition();
-    float directionCheck = (centerToCenter.x * translationAxis.x) + (centerToCenter.y * translationAxis.y);
-    if (directionCheck < 0.f)
-    {
-        translationAxis = -translationAxis; // Flip it to point outward
-    }
+//     // 3. Ensure our final displacement vector points from Car 2 toward Car 1
+//     sf::Vector2f centerToCenter = pos1 - car2->getPosition();
+//     float directionCheck = (centerToCenter.x * translationAxis.x) + (centerToCenter.y * translationAxis.y);
+//     if (directionCheck < 0.f)
+//     {
+//         translationAxis = -translationAxis; // Flip it to point outward
+//     }
 
-    // 4. Push them apart symmetrically along the clean translation axis
-    sf::Vector2f separation = translationAxis * (minOverlap * overlapPushFactor);
+//     // 4. Push them apart symmetrically along the clean translation axis
+//     sf::Vector2f separation = translationAxis * (minOverlap * overlapPushFactor);
 
-    pos1 += separation;
-    car1->setPosition(pos1);
-    car2->setPosition(car2->getPosition() - separation);
-}
+//     pos1 += separation;
+//     car1->setPosition(pos1);
+//     car2->setPosition(car2->getPosition() - separation);
+// }
 
 CollisionHandler::CollisionHandler(Track &track, std::vector<Car *> &cars) : track(track), cars(cars) {}
 
@@ -117,59 +117,59 @@ bool CollisionHandler::handleCollision(Car *car, sf::Vector2f pos, float angle, 
     return flag;
 }
 
-CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle) const
-{
-    CarCollisionResult result;
-    auto corners1 = car1->getCorners(pos, angle);
-    auto corners2 = car2->getCorners();
+// CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle) const
+// {
+//     CarCollisionResult result;
+//     auto corners1 = car1->getCorners(pos, angle);
+//     auto corners2 = car2->getCorners();
 
-    int hitCornerIndex = -1;
-    float closestDist = touchThreshold * touchThreshold;
+//     int hitCornerIndex = -1;
+//     float closestDist = touchThreshold * touchThreshold;
 
-    for (int i = 0; i < 4; i++)
-    {
-        std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
+//     for (int i = 0; i < 4; i++)
+//     {
+//         std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
 
-        for (auto &edge : edges)
-        {
-            sf::Vector2f p1 = corners2[edge.first];
-            sf::Vector2f p2 = corners2[edge.second];
-            float dist = distancePointToSegment(corners1[i], p1, p2);
+//         for (auto &edge : edges)
+//         {
+//             sf::Vector2f p1 = corners2[edge.first];
+//             sf::Vector2f p2 = corners2[edge.second];
+//             float dist = distancePointToSegment(corners1[i], p1, p2);
 
-            if (dist < closestDist)
-            {
-                closestDist = dist;
-                hitCornerIndex = i;
-                if (edge == std::pair<int, int>{0, 1})
-                {
-                    result.car2Index = 4; // Front
-                }
-                else if (edge == std::pair<int, int>{2, 3})
-                {
-                    result.car2Index = 5; // Rear
-                }
-                else if (edge == std::pair<int, int>{0, 2})
-                {
-                    result.car2Index = 6; // Left Side
-                }
-                else if (edge == std::pair<int, int>{1, 3})
-                {
-                    result.car2Index = 7; // Right Side
-                }
-            }
-        }
-    }
+//             if (dist < closestDist)
+//             {
+//                 closestDist = dist;
+//                 hitCornerIndex = i;
+//                 if (edge == std::pair<int, int>{0, 1})
+//                 {
+//                     result.car2Index = 4; // Front
+//                 }
+//                 else if (edge == std::pair<int, int>{2, 3})
+//                 {
+//                     result.car2Index = 5; // Rear
+//                 }
+//                 else if (edge == std::pair<int, int>{0, 2})
+//                 {
+//                     result.car2Index = 6; // Left Side
+//                 }
+//                 else if (edge == std::pair<int, int>{1, 3})
+//                 {
+//                     result.car2Index = 7; // Right Side
+//                 }
+//             }
+//         }
+//     }
 
-    if (hitCornerIndex == -1)
-    {
-        result.hit = false;
-        return result;
-    }
+//     if (hitCornerIndex == -1)
+//     {
+//         result.hit = false;
+//         return result;
+//     }
 
-    result.hit = true;
-    result.car1Index = hitCornerIndex;
-    return result;
-}
+//     result.hit = true;
+//     result.car1Index = hitCornerIndex;
+//     return result;
+// }
 
 int CollisionHandler::checkWallCollisions(Car *car, sf::Vector2f pos, float angle) const
 {
@@ -341,7 +341,7 @@ void CollisionHandler::applyPhysicsImpulse(Car *car1, sf::Vector2f &pos1, Car *c
     // ================================================
     // OVERLAP RESOLUTION
     // ================================================
-    resolveCarOverlap(car1, car2, pos1);
+    resolveCarOverlap(car1, car2, pos1, result);
 }
 float CollisionHandler::distancePointToSegment(sf::Vector2f p, sf::Vector2f a, sf::Vector2f b) const
 {
@@ -363,4 +363,103 @@ float CollisionHandler::distancePointToSegment(sf::Vector2f p, sf::Vector2f a, s
     float distx = p.x - closest.x;
     float disty = p.y - closest.y;
     return distx * distx + disty * disty;
+}
+
+CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf::Vector2f pos, float angle) const
+{
+    CarCollisionResult result;
+    auto corners1 = car1->getCorners(pos, angle);
+    auto corners2 = car2->getCorners();
+
+    sf::Vector2f axes[4];
+    axes[0] = corners1[1] - corners1[0];
+    axes[1] = corners1[2] - corners1[0];
+    axes[2] = corners2[1] - corners2[0];
+    axes[3] = corners2[2] - corners2[0];
+
+    float minOverlap = std::numeric_limits<float>::max();
+    sf::Vector2f translationAxis;
+
+    for (int i = 0; i < 4; i++)
+    {
+        float len = std::sqrt(axes[i].x * axes[i].x + axes[i].y * axes[i].y);
+        if (len < degenAxisThreshold)
+            continue;
+        sf::Vector2f axis = axes[i] / len;
+
+        float min1 = dotProduct(corners1[0], axis), max1 = min1;
+        for (int j = 1; j < 4; j++)
+        {
+            float proj = dotProduct(corners1[j], axis);
+            min1 = std::min(min1, proj);
+            max1 = std::max(max1, proj);
+        }
+
+        float min2 = dotProduct(corners2[0], axis), max2 = min2;
+        for (int j = 1; j < 4; j++)
+        {
+            float proj = dotProduct(corners2[j], axis);
+            min2 = std::min(min2, proj);
+            max2 = std::max(max2, proj);
+        }
+
+        float overlap = std::min(max1, max2) - std::max(min1, min2);
+        if (overlap <= 0.f)
+        {
+            result.hit = false;
+            return result;
+        }
+        if (overlap < minOverlap)
+        {
+            minOverlap = overlap;
+            translationAxis = axis;
+        }
+    }
+
+    // contact point / index, purely for the impulse — unchanged from before
+    int hitCornerIndex = 0;
+    float closestDist = std::numeric_limits<float>::max();
+    std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
+    for (int i = 0; i < 4; i++)
+    {
+        for (auto &edge : edges)
+        {
+            float dist = distancePointToSegment(corners1[i], corners2[edge.first], corners2[edge.second]);
+            if (dist < closestDist)
+            {
+                closestDist = dist;
+                hitCornerIndex = i;
+                if (edge == std::pair<int, int>{0, 1})
+                    result.car2Index = 4;
+                else if (edge == std::pair<int, int>{2, 3})
+                    result.car2Index = 5;
+                else if (edge == std::pair<int, int>{0, 2})
+                    result.car2Index = 6;
+                else if (edge == std::pair<int, int>{1, 3})
+                    result.car2Index = 7;
+            }
+        }
+    }
+
+    result.hit = true;
+    result.car1Index = hitCornerIndex;
+    result.minOverlap = minOverlap;
+    result.translationAxis = translationAxis;
+    return result;
+}
+
+void CollisionHandler::resolveCarOverlap(Car *car1, Car *car2, sf::Vector2f &pos1, const CarCollisionResult &result)
+{
+    sf::Vector2f translationAxis = result.translationAxis;
+
+    sf::Vector2f centerToCenter = pos1 - car2->getPosition();
+    float directionCheck = dotProduct(centerToCenter, translationAxis);
+    if (directionCheck < 0.f)
+        translationAxis = -translationAxis;
+
+    sf::Vector2f separation = translationAxis * (result.minOverlap * overlapPushFactor);
+
+    pos1 += separation;
+    car1->setPosition(pos1);
+    car2->setPosition(car2->getPosition() - separation);
 }

@@ -2,10 +2,15 @@
 #include "AIController.h"
 #include "Car.h"
 #include <cmath>
+#include <random>
 
 AIController::AIController(AI *car, const std::vector<Waypoint> &waypoints, const WaypointHandler &wpHandler, int gridSlot)
     : car(car), waypoints(waypoints), wpHandler(wpHandler), gridSlot(gridSlot)
 {
+    std::mt19937 rng(static_cast<unsigned int>(gridSlot) * 2654435761u + 12345u);
+    std::uniform_real_distribution<float> dist(0.15f, 0.45f);
+    minAggro = dist(rng);
+    aggro = minAggro;
 }
 
 void AIController::reset()
@@ -151,27 +156,6 @@ void AIController::updateSpeed()
         verticalInput = carInput::Down;
     else
         verticalInput = carInput::None;
-}
-void AIController::update(const std::vector<Car *> &cars, float dt)
-{
-    updateTrafficAwareness(cars);
-    updateState(cars, dt);
-    updateSteering();
-    updateSpeed();
-    if (state == AIState::Passing && verticalInput == carInput::Up)
-        car->setAcc(baseAcc * passBoostMul);
-    else
-        car->setAcc(baseAcc);
-    // std::cout << "Current state: " << (state == AIState::Cruising ? "Cruising" : state == AIState::Following ? "Following"
-    //                                                                                                          : "Passing")
-    //           << std::endl;
-    // std::cout << "Current index: " << car->getCurrWaypointIndex() << std::endl;
-    // std::cout << "Corner zone: " << wpHandler.data[car->getCurrWaypointIndex()].cornerZoneID << std::endl;
-    // std::cout << "Debug target point: (" << debugTargetPoint.x << ", " << debugTargetPoint.y << ")" << std::endl;
-    // std::cout << "Current Lane: " << (currentLane == TargetSide::Left ? "Left" : currentLane == TargetSide::Mid ? "Mid"
-    //                                                                                                             : "Right")
-    //           << std::endl;
-    // std::cout << "Car infront: " << (carAhead ? "Yes" : "No") << std::endl;
 }
 
 // AIController.cpp
@@ -534,6 +518,218 @@ bool AIController::isLaneClear(TargetSide lane, const std::vector<Car *> &leader
 //         }
 //     }
 // }
+// void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
+// {
+//     int currIdx = car->getCurrWaypointIndex();
+//     bool blocked = (carAhead != nullptr);
+
+//     if (!blocked)
+//     {
+//         state = AIState::Cruising;
+//         passingRival = nullptr;
+
+//         if (currentLane != preferredLane && isLaneClear(preferredLane, leaderboard))
+//             currentLane = preferredLane;
+
+//         return;
+//     }
+
+//     if (state == AIState::Cruising)
+//     {
+//         state = AIState::Following;
+//         followingHoldTime = 0.f;
+//     }
+
+//     if (state == AIState::Following)
+//     {
+//         followingHoldTime += dt;
+//         if (followingHoldTime < followingHoldDuration)
+//             return;
+
+//         TargetSide sideA = TargetSide::Left;
+//         TargetSide sideB = TargetSide::Right;
+
+//         bool aClear = isLaneClear(sideA, leaderboard);
+//         bool bClear = isLaneClear(sideB, leaderboard);
+
+//         TargetSide chosen = currentLane;
+//         bool found = false;
+
+//         if (aClear && currentLane != sideA)
+//         {
+//             chosen = sideA;
+//             found = true;
+//         }
+//         else if (bClear && currentLane != sideB)
+//         {
+//             chosen = sideB;
+//             found = true;
+//         }
+//         else if (aClear)
+//         {
+//             chosen = sideA;
+//             found = true;
+//         }
+//         else if (bClear)
+//         {
+//             chosen = sideB;
+//             found = true;
+//         }
+
+//         if (found)
+//         {
+//             currentLane = chosen;
+//             passingRival = carAhead;
+//             passingEntryIdx = currIdx;
+//             state = AIState::Passing;
+//             passingLastPos = car->getPosition();
+//             passingStuckTime = 0.f;
+//             laneBlockedTime = 0.f;
+//             passingHoldTime = 0.f; // fresh hold on entering Passing
+//         }
+//     }
+//     else if (state == AIState::Passing)
+//     {
+//         passingHoldTime += dt;
+//         bool holdExpired = (passingHoldTime >= passingHoldDuration);
+
+//         // --- all exit checks below are gated behind holdExpired ---
+
+//         if (holdExpired && carAhead != passingRival)
+//         {
+//             state = AIState::Following;
+//             passingRival = nullptr;
+//             followingHoldTime = 0.f;
+//             return;
+//         }
+
+//         if (holdExpired && hasPassed(passingRival, leaderboard))
+//         {
+//             state = AIState::Cruising;
+//             passingRival = nullptr;
+//             return;
+//         }
+
+//         if (!isLaneClear(currentLane, leaderboard))
+//         {
+//             laneBlockedTime += dt;
+//             if (holdExpired && laneBlockedTime > laneBlockedTimeThreshold)
+//             {
+//                 state = AIState::Following;
+//                 passingRival = nullptr;
+//                 laneBlockedTime = 0.f;
+//                 followingHoldTime = 0.f;
+//                 return;
+//             }
+//         }
+//         else
+//         {
+//             laneBlockedTime = 0.f;
+//         }
+
+//         int n = (int)waypoints.size();
+//         int idxDelta = (currIdx - passingEntryIdx + n) % n;
+//         if (holdExpired && idxDelta >= maxPassingIndexSpan)
+//         {
+//             state = AIState::Following;
+//             passingRival = nullptr;
+//             followingHoldTime = 0.f;
+//         }
+
+//         float movedDist = magnitude(car->getPosition() - passingLastPos);
+//         if (movedDist < 5.f)
+//             passingStuckTime += dt;
+//         else
+//         {
+//             passingStuckTime = 0.f;
+//             passingLastPos = car->getPosition();
+//         }
+
+//         if (holdExpired && passingStuckTime > maxPassingStuckTime)
+//         {
+//             state = AIState::Following;
+//             passingRival = nullptr;
+//             followingHoldTime = 0.f;
+//         }
+//     }
+// }
+bool AIController::hasPassed(Car *rival, const std::vector<Car *> &leaderboard) const
+{
+    if (!rival)
+        return true;
+
+    auto myIt = std::find(leaderboard.begin(), leaderboard.end(), car);
+    auto rivalIt = std::find(leaderboard.begin(), leaderboard.end(), rival);
+
+    if (myIt == leaderboard.end() || rivalIt == leaderboard.end())
+        return true; // one of us isn't in the leaderboard (inactive/finished) -> treat as resolved
+
+    return std::distance(leaderboard.begin(), myIt) < std::distance(leaderboard.begin(), rivalIt);
+}
+
+sf::Vector2f AIController::getPassingOverrideTarget(TargetSide lane) const
+{
+    int currIdx = car->getCurrWaypointIndex();
+    int n = (int)waypoints.size();
+
+    // The segment is ALWAYS from prevIdx to currIdx
+    int prevIdx = (currIdx == 0) ? n - 1 : currIdx - 1;
+    int dirIdx = (currIdx == 0) ? 1 : currIdx;
+
+    sf::Vector2f segDir = normalize(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
+    sf::Vector2f segPerp(-segDir.y, segDir.x);
+
+    sf::Vector2f toCar = car->getPosition() - waypoints[prevIdx].mid;
+    float segLen = magnitude(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
+    float projT = (segLen > 0.0001f) ? clamp(dotProduct(toCar, segDir) / segLen, 0.f, 1.f) : 0.f;
+    sf::Vector2f centerlinePoint = waypoints[prevIdx].mid + segDir * (projT * segLen);
+
+    float forwardDist = std::max(minPassingLookahead, car->getCurrSpeed() * 0.6f);
+
+    sf::Vector2f fullLaneTarget = getRailOffset(currIdx, lane); // full rail, not halved
+    sf::Vector2f fullMidTarget = getRailOffset(currIdx, TargetSide::Mid);
+    float laneLateralOffset = dotProduct(fullLaneTarget - fullMidTarget, segPerp);
+
+    return centerlinePoint + segDir * forwardDist + segPerp * laneLateralOffset;
+}
+
+sf::Vector2f AIController::getRailOffset(int waypointIdx, TargetSide lane) const // new helper, or inline
+{
+    const Waypoint &wp = waypoints[waypointIdx];
+    switch (lane)
+    {
+    case TargetSide::Left:
+        return wp.left;
+    case TargetSide::Right:
+        return wp.right;
+    default:
+        return wp.mid;
+    }
+}
+
+void AIController::updateAggro(float dt)
+{
+    float decayRate = aggroDecayRate * ((carAhead == nullptr) ? aggroLeadDecayMul : 1.f);
+    aggro -= decayRate * dt;
+
+    if (state == AIState::Following)
+        aggro += aggroStuckRate * dt;
+
+    int currPos = car->getRacePos();
+    if (lastRacePos != -1 && currPos > lastRacePos)
+        aggro += aggroPassedBoost;
+    lastRacePos = currPos;
+
+    aggro = clamp(aggro, minAggro, maxAggro);
+
+    followingHoldDuration = 0.6f - (0.6f - 0.25f) * aggro;
+    passingHoldDuration = 0.35f - (0.35f - 0.2f) * aggro;
+    passBoostMul = 1.05f + (1.5f - 1.05f) * aggro;
+    maxPassingIndexSpan = (int)(14.f + (24.f - 14.f) * aggro);
+    laneBlockedTimeThreshold = 0.18f + (0.35f - 0.18f) * aggro;
+    defenseFatigueThreshold = 2.f + (6.f - 2.f) * aggro;
+}
+
 void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
 {
     int currIdx = car->getCurrWaypointIndex();
@@ -544,8 +740,42 @@ void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
         state = AIState::Cruising;
         passingRival = nullptr;
 
-        if (currentLane != preferredLane && isLaneClear(preferredLane, leaderboard))
-            currentLane = preferredLane;
+        TargetSide wantLane = preferredLane;
+
+        if (targetedBy && targetedByTimeout > 0.f)
+        {
+            TargetSide attackerLane = targetedBy->getLaneSide(waypoints, currIdx);
+            bool wantsToBlock = (aggro > 0.66f);
+            bool wantsPartial = (aggro > 0.4f && aggro <= 0.66f);
+
+            if (wantsToBlock)
+                wantLane = attackerLane;
+            else if (wantsPartial)
+                wantLane = TargetSide::Mid;
+            else
+                wantLane = (attackerLane == TargetSide::Left) ? TargetSide::Right : TargetSide::Left;
+
+            if (wantsToBlock && wantLane == attackerLane)
+            {
+                defenseFatigue += dt;
+                if (defenseFatigue > defenseFatigueThreshold)
+                {
+                    wantLane = (attackerLane == TargetSide::Left) ? TargetSide::Right : TargetSide::Left;
+                    defenseFatigue = 0.f;
+                }
+            }
+            else
+            {
+                defenseFatigue = std::max(0.f, defenseFatigue - defenseFatigueDecay * dt);
+            }
+        }
+        else
+        {
+            defenseFatigue = std::max(0.f, defenseFatigue - defenseFatigueDecay * dt);
+        }
+
+        if (currentLane != wantLane && isLaneClear(wantLane, leaderboard))
+            currentLane = wantLane;
 
         return;
     }
@@ -601,15 +831,19 @@ void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
             passingLastPos = car->getPosition();
             passingStuckTime = 0.f;
             laneBlockedTime = 0.f;
-            passingHoldTime = 0.f; // fresh hold on entering Passing
+            passingHoldTime = 0.f;
         }
     }
     else if (state == AIState::Passing)
     {
+        if (passingRival)
+        {
+            if (AIController *rivalAI = passingRival->getAIController())
+                rivalAI->notifyTargeted(car);
+        }
+
         passingHoldTime += dt;
         bool holdExpired = (passingHoldTime >= passingHoldDuration);
-
-        // --- all exit checks below are gated behind holdExpired ---
 
         if (holdExpired && carAhead != passingRival)
         {
@@ -669,56 +903,35 @@ void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
         }
     }
 }
-bool AIController::hasPassed(Car *rival, const std::vector<Car *> &leaderboard) const
+
+void AIController::update(const std::vector<Car *> &cars, float dt)
 {
-    if (!rival)
-        return true;
+    updateTrafficAwareness(cars);
 
-    auto myIt = std::find(leaderboard.begin(), leaderboard.end(), car);
-    auto rivalIt = std::find(leaderboard.begin(), leaderboard.end(), rival);
+    updateAggro(dt);
 
-    if (myIt == leaderboard.end() || rivalIt == leaderboard.end())
-        return true; // one of us isn't in the leaderboard (inactive/finished) -> treat as resolved
-
-    return std::distance(leaderboard.begin(), myIt) < std::distance(leaderboard.begin(), rivalIt);
-}
-
-sf::Vector2f AIController::getPassingOverrideTarget(TargetSide lane) const
-{
-    int currIdx = car->getCurrWaypointIndex();
-    int n = (int)waypoints.size();
-
-    // The segment is ALWAYS from prevIdx to currIdx
-    int prevIdx = (currIdx == 0) ? n - 1 : currIdx - 1;
-    int dirIdx = (currIdx == 0) ? 1 : currIdx;
-
-    sf::Vector2f segDir = normalize(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
-    sf::Vector2f segPerp(-segDir.y, segDir.x);
-
-    sf::Vector2f toCar = car->getPosition() - waypoints[prevIdx].mid;
-    float segLen = magnitude(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
-    float projT = (segLen > 0.0001f) ? clamp(dotProduct(toCar, segDir) / segLen, 0.f, 1.f) : 0.f;
-    sf::Vector2f centerlinePoint = waypoints[prevIdx].mid + segDir * (projT * segLen);
-
-    float forwardDist = std::max(minPassingLookahead, car->getCurrSpeed() * 0.6f);
-
-    sf::Vector2f fullLaneTarget = getRailOffset(currIdx, lane); // full rail, not halved
-    sf::Vector2f fullMidTarget = getRailOffset(currIdx, TargetSide::Mid);
-    float laneLateralOffset = dotProduct(fullLaneTarget - fullMidTarget, segPerp);
-
-    return centerlinePoint + segDir * forwardDist + segPerp * laneLateralOffset;
-}
-
-sf::Vector2f AIController::getRailOffset(int waypointIdx, TargetSide lane) const // new helper, or inline
-{
-    const Waypoint &wp = waypoints[waypointIdx];
-    switch (lane)
+    if (targetedBy)
     {
-    case TargetSide::Left:
-        return wp.left;
-    case TargetSide::Right:
-        return wp.right;
-    default:
-        return wp.mid;
+        targetedByTimeout -= dt;
+        if (targetedByTimeout <= 0.f)
+            targetedBy = nullptr;
     }
+
+    updateState(cars, dt);
+    updateSteering();
+    updateSpeed();
+    if (state == AIState::Passing && verticalInput == carInput::Up)
+        car->setAcc(baseAcc * passBoostMul);
+    else
+        car->setAcc(baseAcc);
+    // std::cout << "Current state: " << (state == AIState::Cruising ? "Cruising" : state == AIState::Following ? "Following"
+    //                                                                                                          : "Passing")
+    //           << std::endl;
+    // std::cout << "Current index: " << car->getCurrWaypointIndex() << std::endl;
+    // std::cout << "Corner zone: " << wpHandler.data[car->getCurrWaypointIndex()].cornerZoneID << std::endl;
+    // std::cout << "Debug target point: (" << debugTargetPoint.x << ", " << debugTargetPoint.y << ")" << std::endl;
+    // std::cout << "Current Lane: " << (currentLane == TargetSide::Left ? "Left" : currentLane == TargetSide::Mid ? "Mid"
+    //                                                                                                             : "Right")
+    //           << std::endl;
+    // std::cout << "Car infront: " << (carAhead ? "Yes" : "No") << std::endl;
 }

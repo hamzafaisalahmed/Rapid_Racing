@@ -5,10 +5,13 @@
 #include <ctime>
 #include <stdexcept>
 #include <functional>
+#include <random>
 #include "AIController.h"
 #include "WaypointHandler.h"
 void Game::resetLevel()
 {
+    spectatorTarget = nullptr;
+    spectatorModeToggled = aiSpectatorMode;
     bestLap = BESTLAP_INIT_VAL;
     bestLapHolder = nullptr;
     countdownMode = true;
@@ -25,7 +28,7 @@ void Game::resetLevel()
         car->resetWaypointIndex();
         car->setCurrLap(1);
         car->resetAllLapTime();
-        // ── NEW: Reset AI controller state between races ──
+        car->setFinishedRace(false);
         if (car->isAI())
         {
             AI *aiCar = static_cast<AI *>(car);
@@ -35,23 +38,53 @@ void Game::resetLevel()
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
+
     const float y1 = 2550.f;
     const float y2 = 2600.f;
-    player1.setPosition(sf::Vector2f(1620.f, y1));
+    const float baseX = 1620.f;
+    const float rowSpacing = 45.f; // gap between successive rows going back
+
     if (selectedMode == Gamemode::PVP)
     {
-        player2.setPosition(sf::Vector2f(1620.f, y2));
+        // side by side, same x, no shuffle — order is fixed (player1/player2)
+        player1.setPosition(sf::Vector2f(baseX, y1));
+        player2.setPosition(sf::Vector2f(baseX, y2));
     }
-    else if (selectedMode == Gamemode::AI)
+    else
     {
-        for (size_t i = 2; i < cars.size(); i += 2)
+        // ── Build the list of cars that need a shuffled grid slot ──
+        std::vector<Car *> gridCars;
+        if (selectedMode == Gamemode::TimeTrial)
         {
-            float xPos = 1610.f - (i - 1) * 30.f;
-            cars[i]->setPosition(sf::Vector2f(xPos, y1));
-            if (i + 1 < cars.size())
-                cars[i + 1]->setPosition(sf::Vector2f(xPos, y2));
+            gridCars.push_back(&player1);
+        }
+        else if (selectedMode == Gamemode::AI)
+        {
+            if (!aiSpectatorMode)
+                gridCars.push_back(&player1);
+
+            for (size_t i = 2; i < cars.size(); ++i)
+            {
+                int aiIndex = (int)i - 2;
+                if (aiIndex < selectedAICount)
+                    gridCars.push_back(cars[i]);
+            }
+        }
+
+        static std::mt19937 gridRng(std::random_device{}());
+        std::shuffle(gridCars.begin(), gridCars.end(), gridRng);
+
+        for (size_t slot = 0; slot < gridCars.size(); slot += 2)
+        {
+            float xPos = baseX - (float)(slot / 2) * rowSpacing;
+
+            gridCars[slot]->setPosition(sf::Vector2f(xPos, y1));
+            if (slot + 1 < gridCars.size())
+                gridCars[slot + 1]->setPosition(sf::Vector2f(xPos, y2));
         }
     }
+
+    // ── Active flags / race positions / leaderboard (unchanged logic) ──
     for (size_t i = 0; i < cars.size(); ++i)
     {
         if (selectedMode == Gamemode::TimeTrial)
@@ -65,7 +98,7 @@ void Game::resetLevel()
             if (i == 0 || i == 1)
             {
                 cars[i]->setActive(true);
-                cars[i]->setRacePos(i + 1);
+                cars[i]->setRacePos((int)i + 1);
                 raceLeaderboard.push_back(cars[i]);
             }
             else
@@ -77,7 +110,6 @@ void Game::resetLevel()
                 cars[i]->setActive(false);
             else if (i >= 2)
             {
-                // AI cars start at index 2 — only activate the first selectedAiCount of them
                 int aiIndex = (int)i - 2;
                 bool shouldBeActive = (aiIndex < selectedAICount);
                 cars[i]->setActive(shouldBeActive);
@@ -89,12 +121,19 @@ void Game::resetLevel()
             }
             else
             {
-                cars[i]->setActive(true);
-                cars[i]->setRacePos((int)raceLeaderboard.size() + 1);
-                raceLeaderboard.push_back(cars[i]);
+                cars[i]->setActive(!aiSpectatorMode);
+                if (!aiSpectatorMode)
+                {
+                    cars[i]->setRacePos((int)raceLeaderboard.size() + 1);
+                    raceLeaderboard.push_back(cars[i]);
+                }
             }
         }
     }
+
+    totalRacers = (int)raceLeaderboard.size();
+    finishedCount = 0;
+    spectatorTarget = raceLeaderboard.empty() ? nullptr : raceLeaderboard.front();
 }
 
 void Game::init()
@@ -342,12 +381,35 @@ void Game::handleEvents()
                         {
                             stateManager->pop();
                         }
+                        else if (i == 16)
+                        {
+                            aiSpectatorMode = !aiSpectatorMode; // Toggle spectator mode
+                        }
                         break;
                     }
                 }
             }
         }
+        else if (event.type == sf::Event::KeyPressed)
+        {
+            if (stateManager->getCurrentState() == GameState::Playing && selectedMode == Gamemode::AI)
+            {
+                bool spectating = aiSpectatorMode || spectatorModeToggled;
+
+                if (spectating && event.key.code == sf::Keyboard::Escape)
+                {
+                    stateManager->pushLevelComplete();
+                }
+                else if (spectating && event.key.code == sf::Keyboard::Tab)
+                {
+                    Car *next = findSpectatorTarget(spectatorTarget);
+                    if (next && next != spectatorTarget)
+                        spectatorTarget = next;
+                }
+            }
+        }
     }
+
     if (window.hasFocus())
     {
         if (player1.isStuck() && sf::Keyboard::isKeyPressed(sf::Keyboard::R))
@@ -366,7 +428,7 @@ void Game::handlePlayerMovement(float dt)
 {
     if (window.hasFocus())
     {
-        if (selectedMode == Gamemode::TimeTrial || selectedMode == Gamemode::AI)
+        if (selectedMode == Gamemode::TimeTrial || (selectedMode == Gamemode::AI && !aiSpectatorMode))
         {
             auto xInput = carInput::None;
             auto yInput = carInput::None;
@@ -498,6 +560,11 @@ void Game::update(float dt)
                 if (cars[i]->isStuck() && cars[i] != &player1)
                     cars[i]->resetPosition(waypoints);
                 checkWinner(cars[i]);
+                // Auto-switch camera if the current target just finished
+                if ((aiSpectatorMode || spectatorModeToggled) && (!spectatorTarget || spectatorTarget->isFinishedRace()))
+                {
+                    spectatorTarget = findSpectatorTarget(spectatorTarget);
+                }
             }
         }
     }
@@ -505,17 +572,26 @@ void Game::update(float dt)
 
 bool Game::carPosition(const Car &a, const Car &b)
 {
+    bool aFinished = !a.getActive();
+    bool bFinished = !b.getActive();
+
+    if (aFinished != bFinished)
+        return aFinished; // finished cars always rank ahead of still-racing ones
+
+    if (aFinished && bFinished)
+        return a.getRacePos() < b.getRacePos(); // preserve fixed finish order
+
+    // both still racing — existing track-progress logic, unchanged
     if (a.getCurrLap() != b.getCurrLap())
         return a.getCurrLap() > b.getCurrLap();
     if (a.getCurrWaypointIndex() != b.getCurrWaypointIndex())
         return a.getCurrWaypointIndex() > b.getCurrWaypointIndex();
 
-    int currIdx = a.getCurrWaypointIndex(); // same for both, guaranteed by the check above
+    int currIdx = a.getCurrWaypointIndex();
     int prevIdx = (currIdx == 0) ? 0 : currIdx - 1;
-    int dirIdx = (currIdx == 0) ? 1 : currIdx; // seam guard, same reasoning as getPassingOverrideTarget
+    int dirIdx = (currIdx == 0) ? 1 : currIdx;
 
     sf::Vector2f segDir = normalize(waypoints[dirIdx].mid - waypoints[prevIdx].mid);
-
     float aProgress = dotProduct(a.getPosition() - waypoints[prevIdx].mid, segDir);
     float bProgress = dotProduct(b.getPosition() - waypoints[prevIdx].mid, segDir);
 
@@ -534,7 +610,7 @@ void Game::render()
 
         if (selectedMode == Gamemode::TimeTrial)
         {
-            graphics->renderGamePlay(cars);
+            graphics->renderGamePlay(cars, &player1);
             graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
@@ -547,12 +623,18 @@ void Game::render()
         }
         else if (selectedMode == Gamemode::AI)
         {
-            graphics->renderGamePlay(cars);
-            graphics->renderAIHUD(raceLeaderboard, totalLaps, totalRaceTime);
-            if (player1.isStuck())
+            bool spectating = aiSpectatorMode || spectatorModeToggled;
+            Car *cameraFocus = (spectating && spectatorTarget) ? spectatorTarget : &player1;
+
+            graphics->renderGamePlay(cars, cameraFocus);
+            graphics->renderAIHUD(raceLeaderboard, totalLaps, totalRaceTime, spectating);
+
+            if (!spectating && player1.isStuck())
                 graphics->renderResetButton(selectedMode);
+
             graphics->debugWaypointAI(wpHandler, track.getWaypoints());
         }
+
         graphics->renderMinimap(cars, selectedMode);
         if (countdownMode)
             graphics->renderCountdown(countdownTime);
@@ -581,28 +663,108 @@ void Game::render()
     }
     else if (stateManager->getCurrentState() == GameState::Settings)
     {
-        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, selectedAICount, stateManager->getCurrVol() == 0.f);
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, selectedAICount, stateManager->getCurrVol() == 0.f, aiSpectatorMode);
     }
 }
 
-void Game::checkWinner(Car *player) // updateWaypoint handled here
+// void Game::checkWinner(Car *player) // updateWaypoint handled here
+// {
+//     if (player->updateWaypoint(waypoints))
+//     {
+//         player->incrementLaps();
+//         updateBestLap();
+//         player->resetCurrentLapTime();
+//         if (player1.getCurrLap() > totalLaps || (selectedMode == Gamemode::PVP && player2.getCurrLap() > totalLaps))
+//         {
+//             if (!player->isAI())
+//             {
+//                 if (bestLapHolder && !bestLapHolder->isAI())
+//                 {
+//                     leaderboardManager.saveLapTime(bestLapHolder->getLapData());
+//                 }
+//                 else
+//                     leaderboardManager.saveLapTime(player->getLapData());
+//                 stateManager->pushLevelComplete();
+//             }
+//         }
+//     }
+// }
+// void Game::checkWinner(Car *car)
+// {
+//     if (car->updateWaypoint(waypoints))
+//     {
+//         car->incrementLaps();
+//         updateBestLap();
+//         car->resetCurrentLapTime();
+
+//         if (car->getCurrLap() > totalLaps && car->getActive())
+//         {
+//             car->setActive(false);
+//             car->setRacePos(++finishedCount); // fixed permanently — never reassigned again
+
+//             if (!car->isAI())
+//             {
+//                 if (bestLapHolder && !bestLapHolder->isAI())
+//                     leaderboardManager.saveLapTime(bestLapHolder->getLapData());
+//                 else
+//                     leaderboardManager.saveLapTime(car->getLapData());
+//             }
+
+//             if (stateManager->getCurrentState() != GameState::Playing)
+//                 return;
+
+//             if (selectedMode == Gamemode::AI)
+//             {
+//                 bool playerFinished = (player1.getCurrLap() > totalLaps);
+//                 if (playerFinished || finishedCount >= totalRacers)
+//                     stateManager->pushLevelComplete();
+//             }
+//             else // TimeTrial, PVP — first finisher ends it, matches prior behavior
+//             {
+//                 if (finishedCount >= 1)
+//                     stateManager->pushLevelComplete();
+//             }
+//         }
+//     }
+// }
+
+void Game::checkWinner(Car *car)
 {
-    if (player->updateWaypoint(waypoints))
+    if (car->updateWaypoint(waypoints))
     {
-        player->incrementLaps();
+        car->incrementLaps();
+        car->resetCurrentLapTime(); // must run first so THIS lap's time is in lapData.bestLap
         updateBestLap();
-        player->resetCurrentLapTime();
-        if (player1.getCurrLap() > totalLaps || (selectedMode == Gamemode::PVP && player2.getCurrLap() > totalLaps))
+
+        if (car->getCurrLap() > totalLaps && car->getActive())
         {
-            if (!player->isAI())
+            car->setActive(false); // ← ADDED: stops AI update/movement for this car
+            car->setFinishedRace(true);
+            car->setRacePos(++finishedCount);
+
+            if (!car->isAI())
             {
                 if (bestLapHolder && !bestLapHolder->isAI())
-                {
                     leaderboardManager.saveLapTime(bestLapHolder->getLapData());
-                }
                 else
-                    leaderboardManager.saveLapTime(player->getLapData());
-                stateManager->pushLevelComplete();
+                    leaderboardManager.saveLapTime(car->getLapData());
+            }
+
+            if (stateManager->getCurrentState() != GameState::Playing)
+                return;
+
+            if (selectedMode == Gamemode::AI)
+            {
+                if (!car->isAI())
+                    spectatorModeToggled = true;
+
+                if (finishedCount >= totalRacers)
+                    stateManager->pushLevelComplete();
+            }
+            else
+            {
+                if (finishedCount >= 1)
+                    stateManager->pushLevelComplete();
             }
         }
     }
@@ -612,6 +774,8 @@ void Game::updateRacePositions()
 {
     for (size_t i = 0; i < raceLeaderboard.size(); ++i)
     {
+        if (!raceLeaderboard[i]->getActive() || raceLeaderboard[i]->isFinishedRace())
+            continue;
         raceLeaderboard[i]->setRacePos(i + 1);
     }
 }
@@ -620,10 +784,39 @@ void Game::updateBestLap()
 {
     for (Car *car : cars)
     {
-        if (car->getActive() && car->getCurrLap() > 0 && car->getBestLapTime() < bestLap)
+        if ((car->getActive() || car->isFinishedRace()) && car->getCurrLap() > 0 && car->getBestLapTime() < bestLap)
         {
             bestLap = car->getBestLapTime();
             bestLapHolder = car;
         }
     }
+}
+
+Car *Game::findSpectatorTarget(Car *curr)
+{
+    std::vector<Car *> eligible;
+    for (Car *c : raceLeaderboard)
+        if (c->getActive() && !c->isFinishedRace())
+            eligible.push_back(c);
+
+    if (eligible.empty())
+        return nullptr;
+    if (eligible.size() == 1)
+        return eligible[0];
+
+    int currPos = curr ? curr->getRacePos() : 0;
+    Car *best = nullptr;
+
+    // find the eligible car with the smallest racePos strictly greater than curr's
+    for (Car *c : eligible)
+        if (c->getRacePos() > currPos && (!best || c->getRacePos() < best->getRacePos()))
+            best = c;
+
+    // wrap around: no one further back — go to whoever's currently leading
+    if (!best)
+        for (Car *c : eligible)
+            if (!best || c->getRacePos() < best->getRacePos())
+                best = c;
+
+    return best;
 }

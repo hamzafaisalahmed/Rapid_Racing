@@ -250,6 +250,22 @@ sf::Vector2f Car::getPerpendicularVector() const
     return sf::Vector2f(-dir.y, dir.x);
 }
 
+TargetSide Car::getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const
+{
+    const Waypoint &wp = waypoints[waypointIdx];
+    sf::Vector2f perp = normalize(wp.right - wp.left);
+    float fullWidth = magnitude(wp.right - wp.left);
+
+    float lateral = dotProduct(position - wp.left, perp); // Car can use its own `position` directly
+    float t = (fullWidth > 0.0001f) ? clamp(lateral / fullWidth, 0.f, 1.f) : 0.5f;
+
+    if (t < 0.33f)
+        return TargetSide::Left;
+    if (t > 0.66f)
+        return TargetSide::Right;
+    return TargetSide::Mid;
+}
+
 Player::Player(float xp, float yp, float a, float s, float ms, float mrs, float ac)
     : Car(xp, yp, a, s, ms, mrs, ac)
 {
@@ -278,4 +294,14 @@ float AI::handleAIMovement(float dt, float friction)
         return 0.f;
     }
     return Car::handleMovement(dt, aiController->getHorizontalInput(), aiController->getVerticalInput(), friction);
+}
+
+TargetSide AI::getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const
+{
+    return aiController ? aiController->getCurrentLane() : Car::getLaneSide(waypoints, waypointIdx);
+}
+
+AIController *AI::getAIController() const
+{
+    return aiController.get();
 }

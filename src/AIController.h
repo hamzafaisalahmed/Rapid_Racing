@@ -26,14 +26,37 @@ public:
     carInput getVerticalInput() const { return verticalInput; }
     sf::Vector2f getDebugTargetPoint() const { return debugTargetPoint; }
     void setPreferredLane(TargetSide lane) { preferredLane = lane; }
+    TargetSide getCurrentLane() const { return currentLane; }
+    void notifyTargeted(Car *attacker)
+    {
+        targetedBy = attacker;
+        targetedByTimeout = 0.5f;
+    }
+    float getAggro() const { return aggro; }
 
 private:
     float laneBlockedTime = 0.f;
-    const float laneBlockedTimeThreshold = 0.25f;
+    float laneBlockedTimeThreshold = 0.25f; // was const — now aggro-scaled
     float followingHoldTime = 0.f;
-    const float followingHoldDuration = 0.4f;
+    float followingHoldDuration = 0.4f; // was const — now aggro-scaled
     float passingHoldTime = 0.f;
-    const float passingHoldDuration = 0.3f;
+    float passingHoldDuration = 0.3f; // was const — now aggro-scaled
+
+    float baseAcc = 0.f;
+    float passBoostMul = 1.5f;    // was const — now aggro-scaled
+    int maxPassingIndexSpan = 18; // was const — now aggro-scaled
+
+    // ── aggro system ──────────────────────────────────────────
+    static constexpr float maxAggro = 1.f; // cap, same for every car
+    float minAggro = 0.3f;                 // per-car floor, rolled at construction
+    float aggro = 0.3f;                    // current value, decays toward minAggro / spikes on events
+
+    const float aggroDecayRate = 0.05f;  // baseline decay/sec
+    const float aggroLeadDecayMul = 3.f; // extra decay/sec multiplier while leading clean
+    const float aggroStuckRate = 0.1f;   // rise/sec while stuck Following
+    const float aggroPassedBoost = 0.4f; // instant bump when losing a position
+
+    int lastRacePos = -1;
 
     AI *car;
     const std::vector<Waypoint> &waypoints;
@@ -73,14 +96,10 @@ private:
 
     bool hasPassed(Car *rival, const std::vector<Car *> &leaderboard) const;
     int passingEntryIdx = -1;
-    const int maxPassingIndexSpan = 18; // abort safety net, tuned by feel
 
     // stuck-detection for Following -> Passing trigger
     int followingStartIdx = -1;
     const int stuckIndexWindow = 6; // how many waypoints of no progress before triggering a pass
-
-    float baseAcc = 0.f;
-    const float passBoostMul = 1.5f;
 
     // AIController.h
     sf::Vector2f passingLastPos;
@@ -88,4 +107,14 @@ private:
     const float maxPassingStuckTime = 3.f; // seconds of near-zero movement before force-abort
 
     sf::Vector2f getRailOffset(int waypointIdx, TargetSide lane) const;
+
+    void updateAggro(float dt);
+
+    // ── being targeted (virtual rear-view mirror) ──────────────
+    Car *targetedBy = nullptr;
+    float targetedByTimeout = 0.f;
+
+    float defenseFatigue = 0.f;
+    float defenseFatigueThreshold = 4.f; // aggro-scaled
+    const float defenseFatigueDecay = 2.f;
 };

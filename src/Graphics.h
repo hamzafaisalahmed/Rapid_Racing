@@ -67,7 +67,7 @@ public:
     void renderHUD(float elapsed, int currentLap, int totalLaps);
     void renderHomeScreen();
     void renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes);
-    void renderGamePlay(const std::vector<Car *> cars);
+    // void renderGamePlay(const std::vector<Car *> cars);
     void renderPauseScreen();
     void debugPlayDisplay(Car *car);
     const std::vector<sf::FloatRect> &getHomeButtons() const { return homeButtons; }
@@ -79,18 +79,20 @@ public:
     const sf::FloatRect &getPauseButton() const { return pauseButton; }
     const sf::FloatRect &getResetButton() const { return resetButton; }
     void renderResetButton(Gamemode mode, bool p1 = false, bool p2 = false);
-    void renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted);
     void setCarColors(const std::vector<Car *> cars);
     void renderPVPGameplay(Player &player2);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium);
     void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
     void renderAILvlComplete(Car &player, const LapTime &lapData, const std::vector<Car *> &podium);
-    void renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed);
+    void renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed, bool spectatorMode = false);
     void renderLevelCompleteButtons();
     void renderCountdown(float countdownTimer);
 
     void debugAITarget(const std::vector<Car *> &cars);
 
     void debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints);
+
+    void renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted, bool isSpectator);
+    void renderGamePlay(const std::vector<Car *> cars, Car *focusCar = nullptr);
 };

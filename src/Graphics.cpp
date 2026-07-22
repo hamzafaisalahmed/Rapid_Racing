@@ -80,6 +80,9 @@ void Graphics::init()
 
     // Index 15: Return to Menu (Y = 660, Width = 240)
     settingsButtons.push_back(sf::FloatRect(480.f, 660.f, 240.f, 50.f));
+
+    // Index 16: Spectator Mode Toggle (Y = 580, Width = 240, placed on the left)
+    settingsButtons.push_back(sf::FloatRect(150.f, 580.f, 240.f, 50.f));
     // ========================================================
     // LEVEL COMPLETE BUTTONS
     // ========================================================
@@ -429,7 +432,7 @@ void Graphics::renderResetButton(Gamemode mode, bool p1, bool p2)
     }
 }
 
-void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted)
+void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted, bool isSpectator)
 {
     window.setView(hudView);
     window.clear(sf::Color(20, 20, 25));
@@ -443,21 +446,21 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int curre
     drawTextCentered("RACE LAPS", 600.f, 280.f, 22, sf::Color(200, 200, 200));
     drawTextCentered("NUMBER OF AI OPPONENTS", 600.f, 420.f, 22, sf::Color(200, 200, 200));
 
-    // 16 Labels total
     std::string labels[] = {
         "LEVEL 1", "LEVEL 2", "LEVEL 3",
         "1 LAP", "2 LAPS", "3 LAPS", "5 LAPS",
         "1", "2", "3", "4", "5", "6", "7",
         isMuted ? "AUDIO: MUTED" : "AUDIO: ON",
-        "RETURN TO MENU"};
+        "RETURN TO MENU",
+        isSpectator ? "SPECTATOR: ON" : "SPECTATOR: OFF"};
 
-    // Evaluate all 16 configuration conditions instantly
     bool activeStates[] = {
         currentLevel == 0, currentLevel == 1, currentLevel == 2,
         currentLaps == 0, currentLaps == 1, currentLaps == 2, currentLaps == 3,
         currentAiCount == 1, currentAiCount == 2, currentAiCount == 3, currentAiCount == 4, currentAiCount == 5, currentAiCount == 6, currentAiCount == 7,
         isMuted,
-        false};
+        false,
+        isSpectator};
 
     // The rendering loop
     for (size_t i = 0; i < settingsButtons.size(); ++i)
@@ -750,7 +753,7 @@ void Graphics::renderAILvlComplete(Car &player, const LapTime &lapData, const st
     for (size_t i = 0; i < podium.size() && displayedCount < 3; ++i)
     {
         // Guardrail: Skip inactive or null cars
-        if (!podium[i] || !podium[i]->getActive())
+        if (!podium[i] || (!podium[i]->getActive() && !podium[i]->isFinishedRace()))
             continue;
 
         std::string label = (displayedCount == 0) ? "1ST: " : (displayedCount == 1) ? "2ND: "
@@ -779,13 +782,14 @@ void Graphics::renderAILvlComplete(Car &player, const LapTime &lapData, const st
         }
     }
     // Live player position display
-    drawTextCentered("Your Position: P" + std::to_string(player.getRacePos()), 600.f, 460.f, 22, sf::Color::Cyan);
+    if (player.isFinishedRace())
+        drawTextCentered("Your Position: P" + std::to_string(player.getRacePos()), 600.f, 460.f, 22, sf::Color::Cyan);
 
     // 3. Buttons (Clear and reuse existing member vector)
     renderLevelCompleteButtons();
 }
 
-void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed)
+void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed, bool spectatorMode)
 {
     // Switch to HUD view so UI elements remain locked to the window
     window.setView(hudView);
@@ -840,7 +844,7 @@ void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalL
     for (size_t i = 0; i < raceLeaderboard.size(); ++i)
     {
         Car *c = raceLeaderboard[i];
-        if (!c || !c->getActive())
+        if (!c || (!c->getActive() && !c->isFinishedRace()))
             continue;
 
         int pos = c->getRacePos();
@@ -918,6 +922,12 @@ void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalL
     }
     window.draw(pause);
 
+    if (spectatorMode)
+        drawTextCentered("SPECTATOR MODE - PRESS [ESC] TO SKIP TO RESULTS",
+                         hudView.getSize().x / 2.f,
+                         hudView.getSize().y - 40.f,
+                         20,
+                         sf::Color(255, 255, 255, 200));
     // Restore original game view camera configuration
     window.setView(gameView);
 }
@@ -1001,123 +1011,123 @@ void Graphics::debugAITarget(const std::vector<Car *> &cars)
     }
 }
 
-void Graphics::renderGamePlay(const std::vector<Car *> cars)
-{
-    sf::Vector2u trackSize = track.getSize();
+// void Graphics::renderGamePlay(const std::vector<Car *> cars)
+// {
+//     sf::Vector2u trackSize = track.getSize();
 
-    // Camera settings using static variables
-    static float zoomLevel = 0.5f; // Start zoomed in more to see if it works
-    static int spectateIndex = 2;
-    static bool followAI = true;
-    static sf::Clock tabCooldown;
-    static sf::Clock fCooldown;
-    static sf::Vector2f freeCamPos(0.f, 0.f);
-    static bool initialized = false;
+//     // Camera settings using static variables
+//     static float zoomLevel = 0.5f; // Start zoomed in more to see if it works
+//     static int spectateIndex = 2;
+//     static bool followAI = true;
+//     static sf::Clock tabCooldown;
+//     static sf::Clock fCooldown;
+//     static sf::Vector2f freeCamPos(0.f, 0.f);
+//     static bool initialized = false;
 
-    if (!initialized)
-    {
-        freeCamPos = sf::Vector2f(trackSize.x / 2.f, trackSize.y / 2.f);
-        initialized = true;
-    }
+//     if (!initialized)
+//     {
+//         freeCamPos = sf::Vector2f(trackSize.x / 2.f, trackSize.y / 2.f);
+//         initialized = true;
+//     }
 
-    float moveSpeed = 20.0f;
+//     float moveSpeed = 20.0f;
 
-    // Switch between AI cars
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
-    {
-        if (tabCooldown.getElapsedTime().asSeconds() > 0.3f)
-        {
-            spectateIndex++;
-            if (spectateIndex >= static_cast<int>(cars.size()))
-                spectateIndex = 2;
-            tabCooldown.restart();
-        }
-    }
+//     // Switch between AI cars
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
+//     {
+//         if (tabCooldown.getElapsedTime().asSeconds() > 0.3f)
+//         {
+//             spectateIndex++;
+//             if (spectateIndex >= static_cast<int>(cars.size()))
+//                 spectateIndex = 2;
+//             tabCooldown.restart();
+//         }
+//     }
 
-    // Zoom controls - more aggressive zoom for testing
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
-    {
-        zoomLevel -= 0.01f;
-        if (zoomLevel < 0.2f)
-            zoomLevel = 0.2f;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
-    {
-        zoomLevel += 0.01f;
-        if (zoomLevel > 3.0f)
-            zoomLevel = 3.0f;
-    }
+//     // Zoom controls - more aggressive zoom for testing
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+//     {
+//         zoomLevel -= 0.01f;
+//         if (zoomLevel < 0.2f)
+//             zoomLevel = 0.2f;
+//     }
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+//     {
+//         zoomLevel += 0.01f;
+//         if (zoomLevel > 3.0f)
+//             zoomLevel = 3.0f;
+//     }
 
-    // Toggle follow mode
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
-    {
-        if (fCooldown.getElapsedTime().asSeconds() > 0.3f)
-        {
-            followAI = !followAI;
-            fCooldown.restart();
-        }
-    }
+//     // Toggle follow mode
+//     if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
+//     {
+//         if (fCooldown.getElapsedTime().asSeconds() > 0.3f)
+//         {
+//             followAI = !followAI;
+//             fCooldown.restart();
+//         }
+//     }
 
-    // Calculate view size based on zoom
-    float viewWidth = trackSize.x * zoomLevel;
-    float viewHeight = trackSize.y * zoomLevel;
-    gameView.setSize(viewWidth, viewHeight);
+//     // Calculate view size based on zoom
+//     float viewWidth = trackSize.x * zoomLevel;
+//     float viewHeight = trackSize.y * zoomLevel;
+//     gameView.setSize(viewWidth, viewHeight);
 
-    // Calculate view center
-    sf::Vector2f viewCenter;
+//     // Calculate view center
+//     sf::Vector2f viewCenter;
 
-    if (followAI && spectateIndex < static_cast<int>(cars.size()) && cars[spectateIndex]->getActive())
-    {
-        viewCenter = cars[spectateIndex]->getPosition();
-    }
-    else
-    {
-        // Free camera mode
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            freeCamPos.x -= moveSpeed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            freeCamPos.x += moveSpeed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-            freeCamPos.y -= moveSpeed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-            freeCamPos.y += moveSpeed;
+//     if (followAI && spectateIndex < static_cast<int>(cars.size()) && cars[spectateIndex]->getActive())
+//     {
+//         viewCenter = cars[spectateIndex]->getPosition();
+//     }
+//     else
+//     {
+//         // Free camera mode
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+//             freeCamPos.x -= moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+//             freeCamPos.x += moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+//             freeCamPos.y -= moveSpeed;
+//         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+//             freeCamPos.y += moveSpeed;
 
-        viewCenter = freeCamPos;
-    }
+//         viewCenter = freeCamPos;
+//     }
 
-    // Clamp to track bounds
-    float halfWidth = viewWidth / 2.f;
-    float halfHeight = viewHeight / 2.f;
+//     // Clamp to track bounds
+//     float halfWidth = viewWidth / 2.f;
+//     float halfHeight = viewHeight / 2.f;
 
-    if (viewCenter.x - halfWidth < 0.f)
-        viewCenter.x = halfWidth;
-    if (viewCenter.x + halfWidth > trackSize.x)
-        viewCenter.x = trackSize.x - halfWidth;
-    if (viewCenter.y - halfHeight < 0.f)
-        viewCenter.y = halfHeight;
-    if (viewCenter.y + halfHeight > trackSize.y)
-        viewCenter.y = trackSize.y - halfHeight;
+//     if (viewCenter.x - halfWidth < 0.f)
+//         viewCenter.x = halfWidth;
+//     if (viewCenter.x + halfWidth > trackSize.x)
+//         viewCenter.x = trackSize.x - halfWidth;
+//     if (viewCenter.y - halfHeight < 0.f)
+//         viewCenter.y = halfHeight;
+//     if (viewCenter.y + halfHeight > trackSize.y)
+//         viewCenter.y = trackSize.y - halfHeight;
 
-    gameView.setCenter(viewCenter);
+//     gameView.setCenter(viewCenter);
 
-    window.setView(gameView);
-    track.draw(window, sf::VideoMode::getDesktopMode());
-    if (player.isInvincible())
-    {
-        if ((int)(player.getITime() * 10.f) % 2 != 0)
-            player.draw(window);
-    }
-    else
-        player.draw(window);
-    for (size_t i = 2; i < cars.size(); i++)
-    {
-        if (!cars[i]->getActive())
-            continue;
-        cars[i]->draw(window);
-    }
-    debugPlayDisplay(&player);
-    // debugAITarget(cars);
-}
+//     window.setView(gameView);
+//     track.draw(window, sf::VideoMode::getDesktopMode());
+//     if (player.isInvincible())
+//     {
+//         if ((int)(player.getITime() * 10.f) % 2 != 0)
+//             player.draw(window);
+//     }
+//     else
+//         player.draw(window);
+//     for (size_t i = 2; i < cars.size(); i++)
+//     {
+//         if (!cars[i]->getActive())
+//             continue;
+//         cars[i]->draw(window);
+//     }
+//     debugPlayDisplay(&player);
+//     // debugAITarget(cars);
+// }
 
 void Graphics::debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints)
 {
@@ -1172,4 +1182,42 @@ void Graphics::debugWaypointAI(const WaypointHandler &wpHandler, const std::vect
             }
         }
     }
+}
+
+void Graphics::renderGamePlay(const std::vector<Car *> cars, Car *focusCar)
+{
+    if (!focusCar && !cars.empty())
+        focusCar = cars[0]; // fallback to player 1
+
+    sf::Vector2u trackSize = track.getSize();
+    sf::Vector2f viewCenter = focusCar->getPosition();
+    float viewWidth = gameView.getSize().x;
+    float viewHeight = gameView.getSize().y;
+
+    if (viewCenter.x - viewWidth / 2.f < 0.f)
+        viewCenter.x = viewWidth / 2.f;
+    if (viewCenter.x + viewWidth / 2.f > trackSize.x)
+        viewCenter.x = trackSize.x - viewWidth / 2.f;
+    if (viewCenter.y - viewHeight / 2.f < 0.f)
+        viewCenter.y = viewHeight / 2.f;
+    if (viewCenter.y + viewHeight / 2.f > trackSize.y)
+        viewCenter.y = trackSize.y - viewHeight / 2.f;
+
+    gameView.setCenter(viewCenter);
+    window.setView(gameView);
+    track.draw(window, sf::VideoMode::getDesktopMode());
+
+    // Draw all active cars uniformly
+    for (Car *car : cars)
+    {
+        if (!car->getActive())
+            continue;
+        if (car->isInvincible() && ((int)(car->getITime() * 10.f) % 2 != 0))
+            car->draw(window);
+        else
+            car->draw(window);
+    }
+
+    debugPlayDisplay(focusCar);
+    debugAITarget(cars);
 }
