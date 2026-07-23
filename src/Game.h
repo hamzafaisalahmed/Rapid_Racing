@@ -68,6 +68,7 @@ class Game
     Car *findSpectatorTarget(Car *curr);
 
     int selectedDifficulty = 1; // 0: Easy, 1: Medium, 2: Hard
+    bool debugDisplay = false;
 
 public:
     void init();

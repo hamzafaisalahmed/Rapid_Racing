@@ -393,7 +393,11 @@ void Game::handleEvents()
                         {
                             stateManager->toggleMute();
                         }
-                        else if (i == 8) // Menu is now index 8
+                        else if (i == 8) // Debug is now index 8
+                        {
+                            debugDisplay = !debugDisplay;
+                        }
+                        else if (i == 9) // Menu is now index 9
                         {
                             stateManager->pop();
                         }
@@ -662,14 +666,14 @@ void Game::render()
 
         if (selectedMode == Gamemode::TimeTrial)
         {
-            graphics->renderGamePlay(cars, &player1);
+            graphics->renderGamePlay(cars, &player1, debugDisplay);
             graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
         }
         else if (selectedMode == Gamemode::PVP)
         {
-            graphics->renderPVPGameplay(player2);
+            graphics->renderPVPGameplay(player2, debugDisplay);
             graphics->renderPVPHUD(player2, totalLaps, totalRaceTime);
             graphics->renderResetButton(selectedMode, player1.isStuck(), player2.isStuck());
         }
@@ -678,13 +682,14 @@ void Game::render()
             bool spectating = aiSpectatorMode || spectatorModeToggled;
             Car *cameraFocus = (spectating && spectatorTarget) ? spectatorTarget : &player1;
 
-            graphics->renderGamePlay(cars, cameraFocus);
+            graphics->renderGamePlay(cars, cameraFocus, debugDisplay);
             graphics->renderAIHUD(raceLeaderboard, totalLaps, totalRaceTime, spectating);
 
             if (!spectating && player1.isStuck())
                 graphics->renderResetButton(selectedMode);
 
-            graphics->debugWaypointAI(wpHandler, track.getWaypoints());
+            if (debugDisplay)
+                graphics->debugWaypointAI(wpHandler, track.getWaypoints());
         }
 
         graphics->renderMinimap(cars, selectedMode);
@@ -715,7 +720,7 @@ void Game::render()
     }
     else if (stateManager->getCurrentState() == GameState::Settings)
     {
-        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, stateManager->getCurrVol() == 0.f);
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, stateManager->getCurrVol() == 0.f, debugDisplay);
     }
     else if (stateManager->getCurrentState() == GameState::AISetup)
     {

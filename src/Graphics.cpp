@@ -63,18 +63,21 @@ void Graphics::init()
     //=====================================================================================
     settingsButtons.clear();
 
-    // Indices 0-2: Levels (Y = 250, Width = 150)
+    // Indices 0-2: Levels
     for (int i = 0; i < 3; ++i)
         settingsButtons.push_back(sf::FloatRect(355.f + (i * 170.f), 250.f, 150.f, 50.f));
 
-    // Indices 3-6: Laps (Y = 380, Width = 150)
+    // Indices 3-6: Laps
     for (int i = 0; i < 4; ++i)
         settingsButtons.push_back(sf::FloatRect(270.f + (i * 170.f), 380.f, 150.f, 50.f));
 
     // Index 7: Mute (Y = 510, Width = 240)
     settingsButtons.push_back(sf::FloatRect(480.f, 510.f, 240.f, 50.f));
 
-    // Index 8: Return to Menu (Y = 620, Width = 240)
+    // Index 8: Debug display
+    settingsButtons.push_back(sf::FloatRect(480.f, 565.f, 240.f, 50.f));
+
+    // Index 9: Return to Menu
     settingsButtons.push_back(sf::FloatRect(480.f, 620.f, 240.f, 50.f));
     // ========================================================
     // LEVEL COMPLETE BUTTONS
@@ -447,7 +450,7 @@ void Graphics::renderResetButton(Gamemode mode, bool p1, bool p2)
     }
 }
 
-void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted)
+void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted, bool debugDisplay)
 {
     window.setView(hudView);
     window.clear(sf::Color(20, 20, 25));
@@ -464,13 +467,13 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
         "LEVEL 1", "LEVEL 2", "LEVEL 3",
         "1 LAP", "2 LAPS", "3 LAPS", "5 LAPS",
         isMuted ? "AUDIO: MUTED" : "AUDIO: ON",
+        debugDisplay ? "DEBUG: ON" : "DEBUG: OFF",
         "RETURN TO MENU"};
 
     bool activeStates[] = {
         currentLevel == 0, currentLevel == 1, currentLevel == 2,
         currentLaps == 0, currentLaps == 1, currentLaps == 2, currentLaps == 3,
-        isMuted,
-        false};
+        isMuted, debugDisplay, false};
 
     // The rendering loop
     for (size_t i = 0; i < settingsButtons.size(); ++i)
@@ -501,7 +504,7 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
     }
 }
 
-void Graphics::renderPVPGameplay(Player &player2)
+void Graphics::renderPVPGameplay(Player &player2, bool debugDisplay)
 {
     sf::Vector2u trackSize = track.getSize();
 
@@ -554,9 +557,12 @@ void Graphics::renderPVPGameplay(Player &player2)
         }
         else
             player2.draw(window);
+        if (debugDisplay)
+        {
+            debugPlayDisplay(&player);
+            debugPlayDisplay(&player2);
+        }
     }
-    debugPlayDisplay(&player);
-    debugPlayDisplay(&player2);
 }
 
 void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime)
@@ -1193,7 +1199,7 @@ void Graphics::debugWaypointAI(const WaypointHandler &wpHandler, const std::vect
     }
 }
 
-void Graphics::renderGamePlay(const std::vector<Car *> cars, Car *focusCar)
+void Graphics::renderGamePlay(const std::vector<Car *> cars, Car *focusCar, bool debugDisplay)
 {
     if (!focusCar && !cars.empty())
         focusCar = cars[0]; // fallback to player 1
@@ -1227,8 +1233,11 @@ void Graphics::renderGamePlay(const std::vector<Car *> cars, Car *focusCar)
             car->draw(window);
     }
 
-    debugPlayDisplay(focusCar);
-    debugAITarget(cars);
+    if (debugDisplay)
+    {
+        debugPlayDisplay(focusCar);
+        debugAITarget(cars);
+    }
 }
 
 void Graphics::renderAISetupScreen(int currentAiCount, bool isSpectator, int currentDifficulty)

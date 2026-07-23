@@ -82,7 +82,7 @@ public:
     const sf::FloatRect &getResetButton() const { return resetButton; }
     void renderResetButton(Gamemode mode, bool p1 = false, bool p2 = false);
     void setCarColors(const std::vector<Car *> cars);
-    void renderPVPGameplay(Player &player2);
+    void renderPVPGameplay(Player &player2, bool debugDisplay);
     void renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime);
     void renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium);
     void renderMinimap(const std::vector<Car *> &cars, Gamemode mode);
@@ -95,8 +95,8 @@ public:
 
     void debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints);
 
-    void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
-    void renderGamePlay(const std::vector<Car *> cars, Car *focusCar = nullptr);
+    void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted, bool debugDisplay);
+    void renderGamePlay(const std::vector<Car *> cars, Car *focusCar, bool debugDisplay);
 
     void renderAISetupScreen(int currentAiCount, bool isSpectator, int currentDifficulty);
 };
