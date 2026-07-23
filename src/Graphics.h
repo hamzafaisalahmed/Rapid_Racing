@@ -95,7 +95,7 @@ public:
 
     void debugWaypointAI(const WaypointHandler &wpHandler, const std::vector<Waypoint> &waypoints);
 
-    void renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted, bool isSpectator);
+    void renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted);
     void renderGamePlay(const std::vector<Car *> cars, Car *focusCar = nullptr);
 
     void renderAISetupScreen(int currentAiCount, bool isSpectator, int currentDifficulty);

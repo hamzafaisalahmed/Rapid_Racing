@@ -63,26 +63,19 @@ void Graphics::init()
     //=====================================================================================
     settingsButtons.clear();
 
-    // Indices 0-2: Levels (Y = 180, Width = 150)
+    // Indices 0-2: Levels (Y = 250, Width = 150)
     for (int i = 0; i < 3; ++i)
-        settingsButtons.push_back(sf::FloatRect(355.f + (i * 170.f), 180.f, 150.f, 50.f));
+        settingsButtons.push_back(sf::FloatRect(355.f + (i * 170.f), 250.f, 150.f, 50.f));
 
-    // Indices 3-6: Laps (Y = 320, Width = 150)
+    // Indices 3-6: Laps (Y = 380, Width = 150)
     for (int i = 0; i < 4; ++i)
-        settingsButtons.push_back(sf::FloatRect(270.f + (i * 170.f), 320.f, 150.f, 50.f));
+        settingsButtons.push_back(sf::FloatRect(270.f + (i * 170.f), 380.f, 150.f, 50.f));
 
-    // Indices 7-13: AI Count 1 to 7 (Y = 460, Width = 120)
-    for (int i = 0; i < 7; ++i)
-        settingsButtons.push_back(sf::FloatRect(150.f + (i * 130.f), 460.f, 120.f, 50.f));
+    // Index 7: Mute (Y = 510, Width = 240)
+    settingsButtons.push_back(sf::FloatRect(480.f, 510.f, 240.f, 50.f));
 
-    // Index 14: Mute (Y = 580, Width = 240)
-    settingsButtons.push_back(sf::FloatRect(480.f, 580.f, 240.f, 50.f));
-
-    // Index 15: Return to Menu (Y = 660, Width = 240)
-    settingsButtons.push_back(sf::FloatRect(480.f, 660.f, 240.f, 50.f));
-
-    // Index 16: Spectator Mode Toggle (Y = 580, Width = 240, placed on the left)
-    settingsButtons.push_back(sf::FloatRect(150.f, 580.f, 240.f, 50.f));
+    // Index 8: Return to Menu (Y = 620, Width = 240)
+    settingsButtons.push_back(sf::FloatRect(480.f, 620.f, 240.f, 50.f));
     // ========================================================
     // LEVEL COMPLETE BUTTONS
     // ========================================================
@@ -454,7 +447,7 @@ void Graphics::renderResetButton(Gamemode mode, bool p1, bool p2)
     }
 }
 
-void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted, bool isSpectator)
+void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMuted)
 {
     window.setView(hudView);
     window.clear(sf::Color(20, 20, 25));
@@ -463,33 +456,27 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, int curre
     sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
 
     // Static Page Text
-    drawTextCentered("SETTINGS", 600.f, 50.f, 45, sf::Color::White);
-    drawTextCentered("CAR PERFORMANCE PRESET", 600.f, 140.f, 22, sf::Color(200, 200, 200));
-    drawTextCentered("RACE LAPS", 600.f, 280.f, 22, sf::Color(200, 200, 200));
-    drawTextCentered("NUMBER OF AI OPPONENTS", 600.f, 420.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("SETTINGS", 600.f, 100.f, 45, sf::Color::White);
+    drawTextCentered("CAR PERFORMANCE PRESET", 600.f, 230.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("RACE LAPS", 600.f, 360.f, 22, sf::Color(200, 200, 200));
 
     std::string labels[] = {
         "LEVEL 1", "LEVEL 2", "LEVEL 3",
         "1 LAP", "2 LAPS", "3 LAPS", "5 LAPS",
-        "1", "2", "3", "4", "5", "6", "7",
         isMuted ? "AUDIO: MUTED" : "AUDIO: ON",
-        "RETURN TO MENU",
-        isSpectator ? "SPECTATOR: ON" : "SPECTATOR: OFF"};
+        "RETURN TO MENU"};
 
     bool activeStates[] = {
         currentLevel == 0, currentLevel == 1, currentLevel == 2,
         currentLaps == 0, currentLaps == 1, currentLaps == 2, currentLaps == 3,
-        currentAiCount == 1, currentAiCount == 2, currentAiCount == 3, currentAiCount == 4, currentAiCount == 5, currentAiCount == 6, currentAiCount == 7,
         isMuted,
-        false,
-        isSpectator};
+        false};
 
     // The rendering loop
     for (size_t i = 0; i < settingsButtons.size(); ++i)
     {
         sf::FloatRect rect = settingsButtons[i];
 
-        // Draw using the unique bounds set in init() instead of a hardcoded homeBtnSize
         sf::RectangleShape button(sf::Vector2f(rect.width, rect.height));
         button.setPosition(rect.left, rect.top);
 

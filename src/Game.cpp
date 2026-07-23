@@ -21,11 +21,11 @@ void Game::resetLevel()
 
     float diffMultiplier = 1.f;
     if (selectedDifficulty == 0) // Easy
-        diffMultiplier = 0.8f;
+        diffMultiplier = 0.9f;
     else if (selectedDifficulty == 1) // Medium
         diffMultiplier = 1.f;
     else if (selectedDifficulty == 2) // Hard
-        diffMultiplier = 1.2f;
+        diffMultiplier = 1.1f;
     for (auto &car : cars)
     {
         if (car->isAI())
@@ -389,21 +389,13 @@ void Game::handleEvents()
                         {
                             selectedLaps = i - 3;
                         }
-                        else if (i <= 13) // New AI Array block
-                        {
-                            selectedAICount = (i - 7) + 1; // Shifts index 7 back to 1 AI
-                        }
-                        else if (i == 14) // Mute moved from 7 to 14
+                        else if (i == 7) // Mute is now index 7
                         {
                             stateManager->toggleMute();
                         }
-                        else if (i == 15) // Menu moved from 8 to 15
+                        else if (i == 8) // Menu is now index 8
                         {
                             stateManager->pop();
-                        }
-                        else if (i == 16)
-                        {
-                            aiSpectatorMode = !aiSpectatorMode; // Toggle spectator mode
                         }
                         break;
                     }
@@ -723,7 +715,7 @@ void Game::render()
     }
     else if (stateManager->getCurrentState() == GameState::Settings)
     {
-        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, selectedAICount, stateManager->getCurrVol() == 0.f, aiSpectatorMode);
+        graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, stateManager->getCurrVol() == 0.f);
     }
     else if (stateManager->getCurrentState() == GameState::AISetup)
     {
