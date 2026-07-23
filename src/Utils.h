@@ -32,7 +32,8 @@ enum class GameState
     Paused,
     LevelComplete,
     GameOver,
-    Settings
+    Settings,
+    AISetup
 };
 
 enum class carInput

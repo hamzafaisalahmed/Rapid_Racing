@@ -58,6 +58,7 @@ class Graphics
         sf::Color(102, 29, 87),   // purple
         sf::Color(54, 60, 80)     // idk silver blue
     };
+    std::vector<sf::FloatRect> aiSetupButtons;
 
 public:
     Graphics(sf::RenderWindow &w, sf::View &v, sf::View &hud, Track &t, Player &p) : window(w), gameView(v), hudView(hud), track(t), player(p) {}
@@ -75,6 +76,7 @@ public:
     const std::vector<sf::FloatRect> &getPauseScreenButtons() const { return pauseButtons; }
     const std::vector<sf::FloatRect> &getSettingsButtons() const { return settingsButtons; }
     const std::vector<sf::FloatRect> &getResetButtonsPVP() const { return resetButtonPVP; }
+    const std::vector<sf::FloatRect> &getAISetupButtons() const { return aiSetupButtons; }
 
     const sf::FloatRect &getPauseButton() const { return pauseButton; }
     const sf::FloatRect &getResetButton() const { return resetButton; }
@@ -95,4 +97,6 @@ public:
 
     void renderSettingsScreen(int currentLevel, int currentLaps, int currentAiCount, bool isMuted, bool isSpectator);
     void renderGamePlay(const std::vector<Car *> cars, Car *focusCar = nullptr);
+
+    void renderAISetupScreen(int currentAiCount, bool isSpectator, int currentDifficulty);
 };

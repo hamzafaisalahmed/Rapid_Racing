@@ -67,6 +67,8 @@ class Game
     Car *spectatorTarget = nullptr;
     Car *findSpectatorTarget(Car *curr);
 
+    int selectedDifficulty = 1; // 0: Easy, 1: Medium, 2: Hard
+
 public:
     void init();
     void run();

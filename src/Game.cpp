@@ -18,10 +18,26 @@ void Game::resetLevel()
     countdownTime = 3.f;
     raceLeaderboard.clear();
     const CarPreset &selected = carPresets[(size_t)selectedCarLvl];
+
+    float diffMultiplier = 1.f;
+    if (selectedDifficulty == 0) // Easy
+        diffMultiplier = 0.8f;
+    else if (selectedDifficulty == 1) // Medium
+        diffMultiplier = 1.f;
+    else if (selectedDifficulty == 2) // Hard
+        diffMultiplier = 1.2f;
     for (auto &car : cars)
     {
-        car->setMaxSpeed(selected.maxSpeed);
-        car->setAcc(selected.AccRate);
+        if (car->isAI())
+        {
+            car->setMaxSpeed(selected.maxSpeed * diffMultiplier);
+            car->setAcc(selected.AccRate * diffMultiplier);
+        }
+        else
+        {
+            car->setMaxSpeed(selected.maxSpeed);
+            car->setAcc(selected.AccRate);
+        }
         car->setMaxReverseSpeed(-100.f);
         car->setAngle(90.f);
         car->setCurrSpeed(0.f);
@@ -273,7 +289,11 @@ void Game::handleEvents()
                             if (i < 3)
                             {
                                 if (i == 0)
+                                {
                                     selectedMode = Gamemode::AI;
+                                    stateManager->pushAISetup();
+                                    break;
+                                }
                                 else if (i == 1)
                                     selectedMode = Gamemode::PVP;
                                 else if (i == 2)
@@ -386,6 +406,46 @@ void Game::handleEvents()
                             aiSpectatorMode = !aiSpectatorMode; // Toggle spectator mode
                         }
                         break;
+                    }
+                }
+            }
+            else if (stateManager->getCurrentState() == GameState::AISetup)
+            {
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
+
+                    const auto &buttons = graphics->getAISetupButtons();
+
+                    for (size_t i = 0; i < buttons.size(); ++i)
+                    {
+                        if (buttons[i].contains(mp))
+                        {
+                            if (i <= 6)
+                            { // AI Count 1-7
+                                selectedAICount = i + 1;
+                            }
+                            else if (i == 7)
+                            { // Spectator
+                                aiSpectatorMode = !aiSpectatorMode;
+                            }
+                            else if (i <= 10)
+                            { // Difficulty
+                                selectedDifficulty = i - 8;
+                            }
+                            else if (i == 11)
+                            { // BACK
+                                stateManager->pop();
+                            }
+                            else if (i == 12)
+                            { // START RACE
+                                resetLevel();
+                                stateManager->pop(); // Remove AISetup from stack
+                                stateManager->pushPlaying();
+                            }
+                            break;
+                        }
                     }
                 }
             }
@@ -664,6 +724,10 @@ void Game::render()
     else if (stateManager->getCurrentState() == GameState::Settings)
     {
         graphics->renderSettingsScreen(selectedCarLvl, selectedLaps, selectedAICount, stateManager->getCurrVol() == 0.f, aiSpectatorMode);
+    }
+    else if (stateManager->getCurrentState() == GameState::AISetup)
+    {
+        graphics->renderAISetupScreen(selectedAICount, aiSpectatorMode, selectedDifficulty);
     }
 }
 

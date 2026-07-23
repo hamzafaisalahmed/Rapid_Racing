@@ -91,3 +91,8 @@ void StateManager::stopAudio()
     endscreenAudio.stop();
     homeAudio.stop();
 }
+
+void StateManager::pushAISetup()
+{
+    stateStack.push(GameState::AISetup);
+}

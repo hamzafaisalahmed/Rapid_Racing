@@ -19,6 +19,7 @@ public:
     void pushLevelComplete();
     void pushHome();
     void pushSettings();
+    void pushAISetup();
     void toggleMute();
     void pop();
     void clear();

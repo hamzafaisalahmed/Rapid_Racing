@@ -99,6 +99,28 @@ void Graphics::init()
     hoverFill = sf::Color(180, 25, 35);
     hoverOutline = sf::Color(255, 60, 70);
     hoverText = sf::Color(255, 255, 255);
+
+    // ========================================================
+    // AI SETUP BUTTONS
+    // ========================================================
+    aiSetupButtons.clear();
+
+    // Indices 0-6: AI Count 1 to 7 (Y = 200, Width = 120)
+    for (int i = 0; i < 7; ++i)
+        aiSetupButtons.push_back(sf::FloatRect(150.f + (i * 130.f), 200.f, 120.f, 50.f));
+
+    // Index 7: Spectator Mode Toggle (Y = 320, Width = 240)
+    aiSetupButtons.push_back(sf::FloatRect(480.f, 320.f, 240.f, 50.f));
+
+    // Indices 8-10: Difficulty [Easy, Medium, Hard] (Y = 440, Width = 150)
+    for (int i = 0; i < 3; ++i)
+        aiSetupButtons.push_back(sf::FloatRect(345.f + (i * 170.f), 440.f, 150.f, 50.f));
+
+    // Index 11: Start Race (Y = 600)
+    aiSetupButtons.push_back(sf::FloatRect(350.f, 600.f, 200.f, 50.f));
+
+    // Index 12: Back to Home (Y = 600)
+    aiSetupButtons.push_back(sf::FloatRect(650.f, 600.f, 200.f, 50.f));
 }
 void Graphics::drawTextCentered(const std::string &str, float x, float y, int size, sf::Color col)
 {
@@ -1220,4 +1242,59 @@ void Graphics::renderGamePlay(const std::vector<Car *> cars, Car *focusCar)
 
     debugPlayDisplay(focusCar);
     debugAITarget(cars);
+}
+
+void Graphics::renderAISetupScreen(int currentAiCount, bool isSpectator, int currentDifficulty)
+{
+    window.setView(hudView);
+    window.clear(sf::Color(20, 20, 25));
+
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+    // Static Page Text
+    drawTextCentered("AI RACE SETUP", 600.f, 70.f, 45, sf::Color::White);
+    drawTextCentered("NUMBER OF AI OPPONENTS", 600.f, 170.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("SPECTATOR MODE", 600.f, 290.f, 22, sf::Color(200, 200, 200));
+    drawTextCentered("AI DIFFICULTY", 600.f, 410.f, 22, sf::Color(200, 200, 200));
+
+    std::string labels[] = {
+        "1", "2", "3", "4", "5", "6", "7",
+        isSpectator ? "SPECTATOR: ON" : "SPECTATOR: OFF",
+        "EASY", "MEDIUM", "HARD",
+        "BACK", "START"};
+
+    bool activeStates[] = {
+        currentAiCount == 1, currentAiCount == 2, currentAiCount == 3, currentAiCount == 4, currentAiCount == 5, currentAiCount == 6, currentAiCount == 7,
+        isSpectator,
+        currentDifficulty == 0, currentDifficulty == 1, currentDifficulty == 2,
+        false, false // Start and Back don't need active states
+    };
+
+    // The rendering loop
+    for (size_t i = 0; i < aiSetupButtons.size(); ++i)
+    {
+        sf::FloatRect rect = aiSetupButtons[i];
+        sf::RectangleShape button(sf::Vector2f(rect.width, rect.height));
+        button.setPosition(rect.left, rect.top);
+
+        bool isHovered = rect.contains(mappedMousePos);
+        bool isActive = activeStates[i];
+
+        button.setFillColor(isActive ? hoverFill : standardFill);
+
+        if (isHovered)
+        {
+            button.setOutlineColor(hoverOutline);
+            button.setOutlineThickness(3.f);
+        }
+        else
+        {
+            button.setOutlineColor(isActive ? sf::Color::White : standardOutline);
+            button.setOutlineThickness(2.f);
+        }
+
+        window.draw(button);
+        drawTextCentered(labels[i], rect.left + rect.width / 2.f, rect.top + rect.height / 2.f, 18, sf::Color::White);
+    }
 }
