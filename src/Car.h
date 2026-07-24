@@ -45,11 +45,15 @@ protected:
     void syncSprites(sf::Vector2f p, float a);
     bool finishedRace = false;
 
+    bool isAccelerating = false;
+
 public:
     Car(float xp, float yp, float a, float s, float ms, float mrs, float ac);
     void setCollisionFunction(std::function<bool(Car *, sf::Vector2f, float, sf::Vector2f, float, float)> cc) { collisionChecker = cc; }
     void load(const std::string &baseDir, const std::string &detailDir);
     void setBodyColor(sf::Color color) { baseSprite.setColor(color); }
+
+    bool getAccelerating() const { return isAccelerating; }
 
     sf::Vector2f getDimensions() const { return dimensions; }
     std::vector<sf::Vector2f> getCorners(sf::Vector2f pos, float angle);
@@ -87,7 +91,7 @@ public:
     }
 
     float getTurnFactor() const;
-    float handleMovement(float dt, carInput xIn, carInput yIn, float friction);
+    void handleMovement(float dt, carInput xIn, carInput yIn, float friction);
 
     bool updateWaypoint(const std::vector<Waypoint> &waypoints);
     int getCurrWaypointIndex() const { return currWaypointIndex; }
@@ -166,7 +170,7 @@ public:
     std::unique_ptr<AIController> aiController;
     AI(float xp, float yp, float a, float s, float ms, float mrs, float ac);
     AI();
-    float handleAIMovement(float dt, float friction);
+    void handleAIMovement(float dt, float friction);
     bool isAI() const override { return true; }
     TargetSide getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const override;
     AIController *getAIController() const override;

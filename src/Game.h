@@ -39,6 +39,7 @@ class Game
     std::vector<Car *> cars;
 
     sf::Music engineAudio;
+    sf::Music ambientEngineAudio;
     sf::Music endscreen;
     sf::Music homeAudio;
 
@@ -83,6 +84,8 @@ public:
     void updateBestLap();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
+
+    void updateEngineAudio(float dt);
     ~Game()
     {
         for (size_t i = 2; i < cars.size(); ++i)

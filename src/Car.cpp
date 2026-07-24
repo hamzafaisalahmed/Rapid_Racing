@@ -134,13 +134,12 @@ float Car::getTurnFactor() const
     return ratio;
 }
 
-float Car::handleMovement(float dt, carInput xIn, carInput yIn, float friction)
+void Car::handleMovement(float dt, carInput xIn, carInput yIn, float friction)
 {
     sf::Vector2f oldPosition = getPosition();
     float angle = getAngle();
     float oldAngle = angle;
     float turnFactor = 0.f;
-    float targetVolume = 0.f;
 
     if (xIn == carInput::Left)
     {
@@ -158,14 +157,16 @@ float Car::handleMovement(float dt, carInput xIn, carInput yIn, float friction)
     if (yIn == carInput::Up)
     {
         accelerate(dt);
-        targetVolume = std::abs(getCurrSpeed() / getMaxSpeed()) * 100.f;
+        isAccelerating = true;
     }
     else if (yIn == carInput::Down)
     {
         decelerate(dt);
+        isAccelerating = false;
     }
     else
     {
+        isAccelerating = false;
         if (std::abs(getCurrSpeed()) < 10.f)
             setCurrSpeed(0.f);
         else if (std::abs(getCurrSpeed()) < 60.f)
@@ -191,7 +192,6 @@ float Car::handleMovement(float dt, carInput xIn, carInput yIn, float friction)
         angularVelocity = 0.f;
 
     setAngle(lerp(oldAngle, angle, 0.6f));
-    return targetVolume;
 }
 
 bool Car::updateWaypoint(const std::vector<Waypoint> &waypoints)
@@ -286,14 +286,14 @@ AI::AI()
 {
 }
 
-float AI::handleAIMovement(float dt, float friction)
+void AI::handleAIMovement(float dt, float friction)
 {
     if (!aiController)
     {
         std::cerr << "ERROR: aiController is null\n";
-        return 0.f;
+        return;
     }
-    return Car::handleMovement(dt, aiController->getHorizontalInput(), aiController->getVerticalInput(), friction);
+    Car::handleMovement(dt, aiController->getHorizontalInput(), aiController->getVerticalInput(), friction);
 }
 
 TargetSide AI::getLaneSide(const std::vector<Waypoint> &waypoints, int waypointIdx) const

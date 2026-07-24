@@ -9,11 +9,12 @@ class StateManager
     sf::Music &engineAudio;
     sf::Music &endscreenAudio;
     sf::Music &homeAudio;
+    sf::Music &ambientEngineAudio;
     float currVol;
 
 public:
-    StateManager(sf::Music &engine, sf::Music &endscreen, sf::Music &Home)
-        : engineAudio(engine), endscreenAudio(endscreen), homeAudio(Home), currVol(70.f) {}
+    StateManager(sf::Music &engine, sf::Music &endscreen, sf::Music &Home, sf::Music &ambientEngine)
+        : engineAudio(engine), endscreenAudio(endscreen), homeAudio(Home), ambientEngineAudio(ambientEngine), currVol(70.f) {}
     void pushPlaying();
     void pushPause();
     void pushLevelComplete();

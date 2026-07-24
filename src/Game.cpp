@@ -184,6 +184,11 @@ void Game::init()
         throw std::runtime_error("Engine sound not found\n");
     engineAudio.setLoop(true);
 
+    if (!ambientEngineAudio.openFromFile("assets/audio/engine.ogg"))
+        throw std::runtime_error("Ambient engine sound not found\n");
+    ambientEngineAudio.setLoop(true);
+    ambientEngineAudio.setVolume(0.f);
+
     if (!endscreen.openFromFile("assets/audio/endscreen.ogg"))
         throw std::runtime_error("Endscreen music file not found\n");
     endscreen.setLoop(true);
@@ -214,7 +219,7 @@ void Game::init()
     }
 
     graphics->setCarColors(cars);
-    stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio);
+    stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio, ambientEngineAudio);
     wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
 
     for (size_t i = 0; i < wpHandler.cornerZones.size(); ++i)
@@ -505,9 +510,7 @@ void Game::handlePlayerMovement(float dt)
             {
                 yInput = carInput::Down;
             }
-            float targetVolume = player1.handleMovement(dt, xInput, yInput, track.getFriction());
-            if (stateManager->getCurrVol() != 0.f)
-                engineAudio.setVolume(lerp(engineAudio.getVolume(), targetVolume, 10.f * dt));
+            player1.handleMovement(dt, xInput, yInput, track.getFriction());
         }
         else if (selectedMode == Gamemode::PVP)
         {
@@ -549,13 +552,8 @@ void Game::handlePlayerMovement(float dt)
             {
                 p2y = carInput::Down;
             }
-            float vol1 = player1.handleMovement(dt, p1x, p1y, track.getFriction());
-            float vol2 = player2.handleMovement(dt, p2x, p2y, track.getFriction());
-
-            if (stateManager->getCurrVol() != 0.f)
-            {
-                engineAudio.setVolume(lerp(engineAudio.getVolume(), (vol1 + vol2) / 2.f, 10.f * dt));
-            }
+            player1.handleMovement(dt, p1x, p1y, track.getFriction());
+            player2.handleMovement(dt, p2x, p2y, track.getFriction());
         }
     }
 }
@@ -576,6 +574,7 @@ void Game::update(float dt)
 
         handlePlayerMovement(dt);
         totalRaceTime += dt;
+        updateEngineAudio(dt);
 
         if (selectedMode == Gamemode::TimeTrial)
         {
@@ -880,4 +879,50 @@ Car *Game::findSpectatorTarget(Car *curr)
                 best = c;
 
     return best;
+}
+
+void Game::updateEngineAudio(float dt)
+{
+    float masterVol = stateManager->getCurrVol();
+
+    if (masterVol == 0.f)
+    {
+        engineAudio.setVolume(0.f);
+        ambientEngineAudio.setVolume(0.f);
+        return;
+    }
+
+    if (selectedMode == Gamemode::TimeTrial)
+    {
+        engineAudio.setVolume(lerp(engineAudio.getVolume(), player1.getAccelerating() ? masterVol : 0.f, 10.f * dt));
+        ambientEngineAudio.setVolume(0.f);
+    }
+    else if (selectedMode == Gamemode::PVP)
+    {
+        // unchanged
+        float vol1 = std::abs(player1.getCurrSpeed() / player1.getMaxSpeed()) * 100.f;
+        float vol2 = std::abs(player2.getCurrSpeed() / player2.getMaxSpeed()) * 100.f;
+        engineAudio.setVolume(lerp(engineAudio.getVolume(), (vol1 + vol2) / 2.f, 10.f * dt));
+        ambientEngineAudio.setVolume(0.f);
+    }
+    else if (selectedMode == Gamemode::AI)
+    {
+        bool isSpectating = aiSpectatorMode || spectatorModeToggled;
+        Car *focus = (isSpectating && spectatorTarget) ? spectatorTarget : &player1;
+
+        engineAudio.setVolume(lerp(engineAudio.getVolume(), focus->getAccelerating() ? masterVol : 0.f, 10.f * dt));
+
+        bool anyOtherAccelerating = false;
+        for (Car *c : cars)
+        {
+            if (c == focus || !c->getActive())
+                continue;
+            if (c->getAccelerating())
+            {
+                anyOtherAccelerating = true;
+                break;
+            }
+        }
+        ambientEngineAudio.setVolume(lerp(ambientEngineAudio.getVolume(), anyOtherAccelerating ? masterVol * 0.5f : 0.f, 10.f * dt));
+    }
 }
