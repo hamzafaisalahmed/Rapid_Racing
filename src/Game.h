@@ -71,6 +71,8 @@ class Game
     int selectedDifficulty = 1; // 0: Easy, 1: Medium, 2: Hard
     bool debugDisplay = false;
 
+    float maxVol;
+
 public:
     void init();
     void run();
@@ -84,7 +86,6 @@ public:
     void updateBestLap();
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
-
     void updateEngineAudio(float dt);
     ~Game()
     {

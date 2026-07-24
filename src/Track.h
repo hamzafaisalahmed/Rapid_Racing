@@ -15,6 +15,9 @@ class Track
     float frictionFactor;
     std::vector<Waypoint> waypoints;
 
+    sf::Color wallColor = sf::Color::Black;
+    int wallTolerance = 2;
+
 public:
     void LoadTrack(const std::string &dir)
     {
@@ -40,6 +43,12 @@ public:
     }
 
     std::vector<Waypoint> getWaypoints() const { return waypoints; }
+
+    void setWallColor(sf::Color c, int tolerance = 2)
+    {
+        wallColor = c;
+        wallTolerance = tolerance;
+    }
 
     void populateWaypoints()
     {
@@ -159,16 +168,16 @@ public:
     }
     bool isOnRoad(sf::Vector2f pos)
     {
-
-        // Bounds check to avoid memory crashes
         if (pos.x >= trackImage.getSize().x || pos.y >= trackImage.getSize().y || pos.x < 0 || pos.y < 0)
             return false;
 
         sf::Color pixel = trackImage.getPixel((unsigned int)pos.x, (unsigned int)pos.y);
 
-        if (pixel.r <= 2 && pixel.r >= 0 && pixel.g <= 2 && pixel.g >= 0 && pixel.b <= 2 && pixel.b >= 0)
+        if (std::abs((int)pixel.r - (int)wallColor.r) <= wallTolerance &&
+            std::abs((int)pixel.g - (int)wallColor.g) <= wallTolerance &&
+            std::abs((int)pixel.b - (int)wallColor.b) <= wallTolerance)
         {
-            return false; // border collision
+            return false;
         }
         return true;
     }

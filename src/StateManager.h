@@ -10,11 +10,12 @@ class StateManager
     sf::Music &endscreenAudio;
     sf::Music &homeAudio;
     sf::Music &ambientEngineAudio;
+    const float maxVol = 50.f;
     float currVol;
 
 public:
     StateManager(sf::Music &engine, sf::Music &endscreen, sf::Music &Home, sf::Music &ambientEngine)
-        : engineAudio(engine), endscreenAudio(endscreen), homeAudio(Home), ambientEngineAudio(ambientEngine), currVol(70.f) {}
+        : engineAudio(engine), endscreenAudio(endscreen), homeAudio(Home), ambientEngineAudio(ambientEngine), currVol(maxVol) {}
     void pushPlaying();
     void pushPause();
     void pushLevelComplete();
@@ -27,4 +28,5 @@ public:
     float getCurrVol() const { return currVol; }
     GameState getCurrentState() { return stateStack.top(); }
     void stopAudio();
+    float getMaxVol() const { return maxVol; }
 };

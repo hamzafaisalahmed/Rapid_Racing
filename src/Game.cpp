@@ -221,28 +221,7 @@ void Game::init()
     graphics->setCarColors(cars);
     stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio, ambientEngineAudio);
     wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
-
-    for (size_t i = 0; i < wpHandler.cornerZones.size(); ++i)
-    {
-        const auto &z = wpHandler.cornerZones[i];
-        float totalStraightLen = 0.f; // rough: distance from prev zone end to this zone start
-        size_t prevEnd = (i == 0) ? wpHandler.cornerZones.back().end : wpHandler.cornerZones[i - 1].end;
-        size_t idx = (size_t)z.start;
-        while (idx != prevEnd)
-        {
-            size_t p = (idx == 0) ? waypoints.size() - 1 : idx - 1;
-            totalStraightLen += magnitude(waypoints[idx].mid - waypoints[p].mid);
-            idx = p;
-        }
-        float brakeDist = 60.f + 4.f * z.totalAngle;
-        std::cout << "Zone " << i << ": start=" << z.start << " apex=" << z.apex << " end=" << z.end
-                  << " totalAngle=" << z.totalAngle << " peakCurv=" << z.peakCurvature
-                  << " brakeDist=" << brakeDist << " availableStraight=" << totalStraightLen << "\n";
-    }
-    std::cout << "straightThreshold=" << wpHandler.straightThreshold << "\n";
-    for (int i = 53; i <= 61; ++i)
-        std::cout << "idx=" << i << " curvature=" << wpHandler.data[i].curvature
-                  << " zoneID=" << wpHandler.data[i].cornerZoneID << "\n";
+    maxVol = stateManager->getMaxVol();
     stateManager->pushHome();
 }
 
@@ -401,6 +380,8 @@ void Game::handleEvents()
                         else if (i == 8) // Debug is now index 8
                         {
                             debugDisplay = !debugDisplay;
+                            if (debugDisplay)
+                                wpHandler.debugWaypointData(waypoints);
                         }
                         else if (i == 9) // Menu is now index 9
                         {
@@ -468,6 +449,11 @@ void Game::handleEvents()
                         spectatorTarget = next;
                 }
             }
+            // FOR DEBUG ONLY
+            if (debugDisplay && stateManager->getCurrentState() == GameState::Playing && sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+            {
+                stateManager->pushLevelComplete();
+            }
         }
     }
 
@@ -477,12 +463,6 @@ void Game::handleEvents()
             player1.resetPosition(waypoints);
         if (selectedMode == Gamemode::PVP && player2.isStuck() && sf::Keyboard::isKeyPressed(sf::Keyboard::M))
             player2.resetPosition(waypoints);
-
-        // FOR DEBUG ONLY, REMOVE LATER
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-        {
-            stateManager->pushLevelComplete();
-        }
     }
 }
 void Game::handlePlayerMovement(float dt)
@@ -727,67 +707,6 @@ void Game::render()
     }
 }
 
-// void Game::checkWinner(Car *player) // updateWaypoint handled here
-// {
-//     if (player->updateWaypoint(waypoints))
-//     {
-//         player->incrementLaps();
-//         updateBestLap();
-//         player->resetCurrentLapTime();
-//         if (player1.getCurrLap() > totalLaps || (selectedMode == Gamemode::PVP && player2.getCurrLap() > totalLaps))
-//         {
-//             if (!player->isAI())
-//             {
-//                 if (bestLapHolder && !bestLapHolder->isAI())
-//                 {
-//                     leaderboardManager.saveLapTime(bestLapHolder->getLapData());
-//                 }
-//                 else
-//                     leaderboardManager.saveLapTime(player->getLapData());
-//                 stateManager->pushLevelComplete();
-//             }
-//         }
-//     }
-// }
-// void Game::checkWinner(Car *car)
-// {
-//     if (car->updateWaypoint(waypoints))
-//     {
-//         car->incrementLaps();
-//         updateBestLap();
-//         car->resetCurrentLapTime();
-
-//         if (car->getCurrLap() > totalLaps && car->getActive())
-//         {
-//             car->setActive(false);
-//             car->setRacePos(++finishedCount); // fixed permanently — never reassigned again
-
-//             if (!car->isAI())
-//             {
-//                 if (bestLapHolder && !bestLapHolder->isAI())
-//                     leaderboardManager.saveLapTime(bestLapHolder->getLapData());
-//                 else
-//                     leaderboardManager.saveLapTime(car->getLapData());
-//             }
-
-//             if (stateManager->getCurrentState() != GameState::Playing)
-//                 return;
-
-//             if (selectedMode == Gamemode::AI)
-//             {
-//                 bool playerFinished = (player1.getCurrLap() > totalLaps);
-//                 if (playerFinished || finishedCount >= totalRacers)
-//                     stateManager->pushLevelComplete();
-//             }
-//             else // TimeTrial, PVP — first finisher ends it, matches prior behavior
-//             {
-//                 if (finishedCount >= 1)
-//                     stateManager->pushLevelComplete();
-//             }
-//         }
-//     }
-// }
-
 void Game::checkWinner(Car *car)
 {
     if (car->updateWaypoint(waypoints))
@@ -894,7 +813,7 @@ void Game::updateEngineAudio(float dt)
 
     if (selectedMode == Gamemode::TimeTrial)
     {
-        engineAudio.setVolume(lerp(engineAudio.getVolume(), player1.getAccelerating() ? masterVol : 0.f, 10.f * dt));
+        engineAudio.setVolume(clamp(lerp(engineAudio.getVolume(), player1.getAccelerating() ? masterVol : 0.f, 10.f * dt), 0.f, maxVol));
         ambientEngineAudio.setVolume(0.f);
     }
     else if (selectedMode == Gamemode::PVP)
@@ -902,7 +821,7 @@ void Game::updateEngineAudio(float dt)
         // unchanged
         float vol1 = std::abs(player1.getCurrSpeed() / player1.getMaxSpeed()) * 100.f;
         float vol2 = std::abs(player2.getCurrSpeed() / player2.getMaxSpeed()) * 100.f;
-        engineAudio.setVolume(lerp(engineAudio.getVolume(), (vol1 + vol2) / 2.f, 10.f * dt));
+        engineAudio.setVolume(clamp(lerp(engineAudio.getVolume(), (vol1 + vol2) / 2.f, 10.f * dt), 0.f, maxVol));
         ambientEngineAudio.setVolume(0.f);
     }
     else if (selectedMode == Gamemode::AI)
@@ -910,7 +829,7 @@ void Game::updateEngineAudio(float dt)
         bool isSpectating = aiSpectatorMode || spectatorModeToggled;
         Car *focus = (isSpectating && spectatorTarget) ? spectatorTarget : &player1;
 
-        engineAudio.setVolume(lerp(engineAudio.getVolume(), focus->getAccelerating() ? masterVol : 0.f, 10.f * dt));
+        engineAudio.setVolume(clamp(lerp(engineAudio.getVolume(), focus->getAccelerating() ? masterVol : 0.f, 10.f * dt), 0.f, maxVol));
 
         bool anyOtherAccelerating = false;
         for (Car *c : cars)
@@ -923,6 +842,6 @@ void Game::updateEngineAudio(float dt)
                 break;
             }
         }
-        ambientEngineAudio.setVolume(lerp(ambientEngineAudio.getVolume(), anyOtherAccelerating ? masterVol * 0.5f : 0.f, 10.f * dt));
+        ambientEngineAudio.setVolume(clamp(lerp(ambientEngineAudio.getVolume(), anyOtherAccelerating ? masterVol * 0.5f : 0.f, 10.f * dt), 0.f, maxVol));
     }
 }

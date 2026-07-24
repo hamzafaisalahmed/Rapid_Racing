@@ -29,6 +29,7 @@ struct WaypointHandler
     float straightThreshold = 0.f; // derived, not hardcoded
 
     void init(const std::vector<Waypoint> &waypoints, float maxSpeed);
+    void debugWaypointData(const std::vector<Waypoint> &waypoints);
 
 private:
     void computeCurvature(const std::vector<Waypoint> &waypoints);

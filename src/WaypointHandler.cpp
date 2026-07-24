@@ -270,3 +270,28 @@ void WaypointHandler::computeBrakeZones(const std::vector<Waypoint> &waypoints, 
         }
     }
 }
+
+void WaypointHandler::debugWaypointData(const std::vector<Waypoint> &waypoints)
+{
+    for (size_t i = 0; i < cornerZones.size(); ++i)
+    {
+        const auto &z = cornerZones[i];
+        float totalStraightLen = 0.f; // rough: distance from prev zone end to this zone start
+        size_t prevEnd = (i == 0) ? cornerZones.back().end : cornerZones[i - 1].end;
+        size_t idx = (size_t)z.start;
+        while (idx != prevEnd)
+        {
+            size_t p = (idx == 0) ? waypoints.size() - 1 : idx - 1;
+            totalStraightLen += magnitude(waypoints[idx].mid - waypoints[p].mid);
+            idx = p;
+        }
+        float brakeDist = 60.f + 4.f * z.totalAngle;
+        std::cout << "Zone " << i << ": start=" << z.start << " apex=" << z.apex << " end=" << z.end
+                  << " totalAngle=" << z.totalAngle << " peakCurv=" << z.peakCurvature
+                  << " brakeDist=" << brakeDist << " availableStraight=" << totalStraightLen << "\n";
+    }
+    std::cout << "straightThreshold=" << straightThreshold << "\n";
+    for (int i = 53; i <= 61; ++i)
+        std::cout << "idx=" << i << " curvature=" << data[i].curvature
+                  << " zoneID=" << data[i].cornerZoneID << "\n";
+}

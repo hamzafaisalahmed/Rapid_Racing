@@ -88,10 +88,10 @@ void StateManager::clear()
 
 void StateManager::toggleMute()
 {
-    if (currVol == 70.f)
+    if (currVol == maxVol)
         currVol = 0.f;
     else
-        currVol = 70.f;
+        currVol = maxVol;
     homeAudio.setVolume(currVol);
     endscreenAudio.setVolume(currVol);
 }
