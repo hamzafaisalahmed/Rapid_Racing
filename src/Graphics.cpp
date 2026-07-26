@@ -12,11 +12,7 @@ void Graphics::init()
         throw std::runtime_error("Pause texture not found");
     pause.setTexture(pauseTexture);
     //=====================================================================================
-    if (!minimapTexture.loadFromFile("assets/textures/track1mini.png"))
-        throw std::runtime_error("Minimap texture not found");
-
-    minimapSprite.setTexture(minimapTexture);
-    minimapSprite.setScale(minimapScale, minimapScale);
+    loadMinimap();
     //=====================================================================================
     pauseButton = sf::FloatRect(1140.f, 15.f, 45.f, 45.f);
     pause.setPosition(pauseButton.left, pauseButton.top);
@@ -1134,4 +1130,13 @@ void Graphics::renderAISetupScreen(int currentAiCount, bool isSpectator, int cur
         window.draw(button);
         drawTextCentered(labels[i], rect.left + rect.width / 2.f, rect.top + rect.height / 2.f, 18, sf::Color::White);
     }
+}
+
+void Graphics::loadMinimap()
+{
+    if (!minimapTexture.loadFromFile(track.getMinimapImagePath()))
+        throw std::runtime_error("Minimap texture not found");
+
+    minimapSprite.setTexture(minimapTexture);
+    minimapSprite.setScale(minimapScale, minimapScale);
 }

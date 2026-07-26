@@ -69,6 +69,7 @@ public:
     void renderHomeScreen();
     void renderLevelComplete(const LapTime &lapData, const std::vector<LapTime> &allTimes);
     // void renderGamePlay(const std::vector<Car *> cars);
+    void loadMinimap();
     void renderPauseScreen();
     void debugPlayDisplay(Car *car);
     const std::vector<sf::FloatRect> &getHomeButtons() const { return homeButtons; }

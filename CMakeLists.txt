@@ -24,6 +24,7 @@ add_executable(Rapid_Racing
     src/Car.cpp
     src/StateManager.cpp
     src/WaypointHandler.cpp
+    src/TrackLoader.cpp
     app.rc
     icon.ico
 )

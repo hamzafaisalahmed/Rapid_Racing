@@ -8,6 +8,8 @@
 #include <random>
 #include "AIController.h"
 #include "WaypointHandler.h"
+#include "Utils.h"
+#include "TrackLoader.h"
 void Game::resetLevel()
 {
     spectatorTarget = nullptr;
@@ -159,7 +161,7 @@ void Game::init()
     window.create(sf::VideoMode(1200, 800), "Rapid Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
-    track.LoadTrack("assets/textures/track1.png");
+    trackLoader(track, "assets/tracks/track1.json");
     waypoints = track.getWaypoints();
 
     player1.load("assets/textures/detail.png", "assets/textures/base.png");
