@@ -1,4 +1,4 @@
-# Top-Down Racer
+# RAPID RACING
 
 A 2D top-down racing game built with C++ and SFML, featuring physics-based
 car handling, car-to-car and wall collisions, and AI opponents that read the
