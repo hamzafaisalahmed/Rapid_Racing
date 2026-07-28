@@ -53,4 +53,9 @@ void trackLoader(Track &track, const std::string &jsonFilePath)
     if (minimapImage.empty())
         throw std::runtime_error("Missing 'minimapImage' in track: " + jsonFilePath);
     track.setMinimapImagePath(minimapImage);
+    track.setStartPosA(j["startPosA"].get<float>());
+    track.setStartPosB1(j["startPosB1"].get<float>());
+    track.setStartPosB2(j["startPosB2"].get<float>());
+    track.setStartRowSpacing(j["startRowSpacing"].get<float>());
+    track.setStartAngle(j["startAngle"].get<float>());
 }

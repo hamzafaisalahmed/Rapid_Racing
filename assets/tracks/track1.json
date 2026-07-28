@@ -8,6 +8,11 @@
         0
     ],
     "wallTolerance": 2,
+    "startPosA": 1620,
+    "startPosB1": 2550,
+    "startPosB2": 2600,
+    "startRowSpacing": 45,
+    "startAngle": 90,
     "waypoints": [
         [
             1754,

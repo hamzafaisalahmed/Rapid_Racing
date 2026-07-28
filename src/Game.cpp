@@ -41,7 +41,7 @@ void Game::resetLevel()
             car->setAcc(selected.AccRate);
         }
         car->setMaxReverseSpeed(-100.f);
-        car->setAngle(90.f);
+        car->setAngle(track.getStartAngle());
         car->setCurrSpeed(0.f);
         car->resetWaypointIndex();
         car->setCurrLap(1);
@@ -57,10 +57,10 @@ void Game::resetLevel()
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
 
-    const float y1 = 2550.f;
-    const float y2 = 2600.f;
-    const float baseX = 1620.f;
-    const float rowSpacing = 45.f; // gap between successive rows going back
+    const float y1 = track.getStartPosB1();
+    const float y2 = track.getStartPosB2();
+    const float baseX = track.getStartPosA();
+    const float rowSpacing = track.getStartRowSpacing();
 
     if (selectedMode == Gamemode::PVP)
     {

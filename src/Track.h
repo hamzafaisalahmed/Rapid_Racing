@@ -17,7 +17,11 @@ class Track
 
     sf::Color wallColor = sf::Color::Black;
     int wallTolerance = 2;
-
+    float startPosA;
+    float startPosB1;
+    float startPosB2;
+    float startRowSpacing;
+    float startAngle;
     std::string minimapImagePath;
 
 public:
@@ -195,5 +199,16 @@ public:
 
     void setMinimapImagePath(const std::string &img) { minimapImagePath = img; }
     std::string getMinimapImagePath() const { return minimapImagePath; }
+
+    void setStartPosA(float pos) { startPosA = pos; }
+    void setStartPosB1(float pos) { startPosB1 = pos; }
+    void setStartPosB2(float pos) { startPosB2 = pos; }
+    void setStartRowSpacing(float spacing) { startRowSpacing = spacing; }
+    float getStartPosA() const { return startPosA; }
+    float getStartPosB1() const { return startPosB1; }
+    float getStartPosB2() const { return startPosB2; }
+    float getStartRowSpacing() const { return startRowSpacing; }
+    void setStartAngle(float angle) { startAngle = angle; }
+    float getStartAngle() const { return startAngle; }
     ~Track() = default;
 };
