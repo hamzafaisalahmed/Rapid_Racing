@@ -33,7 +33,8 @@ enum class GameState
     LevelComplete,
     GameOver,
     Settings,
-    AISetup
+    AISetup,
+    TrackSelect
 };
 
 enum class carInput

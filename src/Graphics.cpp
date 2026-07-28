@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include "TrackLoader.h"
 
 void Graphics::init()
 {
@@ -11,8 +12,6 @@ void Graphics::init()
     if (!pauseTexture.loadFromFile("assets/textures/pause.png"))
         throw std::runtime_error("Pause texture not found");
     pause.setTexture(pauseTexture);
-    //=====================================================================================
-    loadMinimap();
     //=====================================================================================
     pauseButton = sf::FloatRect(1140.f, 15.f, 45.f, 45.f);
     pause.setPosition(pauseButton.left, pauseButton.top);
@@ -126,7 +125,7 @@ void Graphics::drawTextCentered(const std::string &str, float x, float y, int si
     text.setPosition(x, y);
     window.draw(text);
 }
-void Graphics::renderHUD(float elapsed, int currentLap, int totalLaps)
+void Graphics::renderTTHUD(Player &player, float elapsed, int currentLap, int totalLaps)
 {
     // Switch to HUD view so elements stay locked to your 1200x800 window
     window.setView(hudView);
@@ -459,12 +458,12 @@ void Graphics::renderSettingsScreen(int currentLevel, int currentLaps, bool isMu
     }
 }
 
-void Graphics::renderPVPGameplay(Player &player2, bool debugDisplay)
+void Graphics::renderPVPGameplay(Player &player1, Player &player2, bool debugDisplay)
 {
     sf::Vector2u trackSize = track.getSize();
 
     // Store players and viewport starting X-coordinates in arrays for iteration
-    const Car *players[2] = {&player, &player2};
+    const Car *players[2] = {&player1, &player2};
     float viewportsX[2] = {0.f, 0.5f};
 
     // Dynamic Clamping Math based on zoom level
@@ -498,13 +497,13 @@ void Graphics::renderPVPGameplay(Player &player2, bool debugDisplay)
 
         // Draw the world for the current viewport
         track.draw(window, sf::VideoMode::getDesktopMode());
-        if (player.isInvincible())
+        if (player1.isInvincible())
         {
-            if ((int)(player.getITime() * 10.f) % 2 != 0)
-                player.draw(window);
+            if ((int)(player1.getITime() * 10.f) % 2 != 0)
+                player1.draw(window);
         }
         else
-            player.draw(window);
+            player1.draw(window);
         if (player2.isInvincible())
         {
             if ((int)(player2.getITime() * 10.f) % 2 != 0)
@@ -514,13 +513,13 @@ void Graphics::renderPVPGameplay(Player &player2, bool debugDisplay)
             player2.draw(window);
         if (debugDisplay)
         {
-            debugPlayDisplay(&player);
+            debugPlayDisplay(&player1);
             debugPlayDisplay(&player2);
         }
     }
 }
 
-void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRaceTime)
+void Graphics::renderPVPHUD(const Player &player1, const Player &player2, int totalLaps, float totalRaceTime)
 {
     window.setView(hudView);
 
@@ -550,9 +549,9 @@ void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRac
 
     // --- 3. INDIVIDUAL PLAYER STATS ---
     // Safely handles the +1 lap offset and pulls all data internally
-    int laps[] = {player.getCurrLap(), player2.getCurrLap()};
-    int positions[] = {player.getRacePos(), player2.getRacePos()};
-    int speeds[] = {(int)std::abs(player.getCurrSpeed()), (int)std::abs(player2.getCurrSpeed())};
+    int laps[] = {player1.getCurrLap(), player2.getCurrLap()};
+    int positions[] = {player1.getRacePos(), player2.getRacePos()};
+    int speeds[] = {(int)std::abs(player1.getCurrSpeed()), (int)std::abs(player2.getCurrSpeed())};
     float sideX[] = {15.f, 1005.f};
 
     for (int i = 0; i < 2; ++i)
@@ -596,7 +595,7 @@ void Graphics::renderPVPHUD(const Player &player2, int totalLaps, float totalRac
     window.draw(pause);
 }
 
-void Graphics::renderPVPLvlComplete(const Player &player2, const std::vector<Car *> &podium)
+void Graphics::renderPVPLvlComplete(const Player &player1, const Player &player2, const std::vector<Car *> &podium)
 {
     window.setView(hudView);
 
@@ -633,12 +632,12 @@ void Graphics::renderPVPLvlComplete(const Player &player2, const std::vector<Car
         displayedCount++;
     }
 
-    float p1Best = player.getBestLapTime(); // Assuming player1 is accessible in this class/scope
+    float p1Best = player1.getBestLapTime(); // Assuming player1 is accessible in this class/scope
     float p2Best = player2.getBestLapTime();
 
     // Determine the fastest of the two
     float fastestTime = std::min(p1Best, p2Best);
-    std::string fastestTitle = (p1Best < p2Best) ? player.getTitle() : player2.getTitle();
+    std::string fastestTitle = (p1Best < p2Best) ? player1.getTitle() : player2.getTitle();
 
     if (fastestTime != BESTLAP_INIT_VAL)
     {
@@ -759,7 +758,7 @@ void Graphics::renderAILvlComplete(Car &player, const LapTime &lapData, const st
     renderLevelCompleteButtons();
 }
 
-void Graphics::renderAIHUD(const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed, bool spectatorMode)
+void Graphics::renderAIHUD(Player &player, const std::vector<Car *> &raceLeaderboard, int totalLaps, float elapsed, bool spectatorMode)
 {
     // Switch to HUD view so UI elements remain locked to the window
     window.setView(hudView);
@@ -1095,7 +1094,7 @@ void Graphics::renderAISetupScreen(int currentAiCount, bool isSpectator, int cur
         "1", "2", "3", "4", "5", "6", "7",
         isSpectator ? "SPECTATOR: ON" : "SPECTATOR: OFF",
         "EASY", "MEDIUM", "HARD",
-        "BACK", "START"};
+        "BACK", "NEXT"};
 
     bool activeStates[] = {
         currentAiCount == 1, currentAiCount == 2, currentAiCount == 3, currentAiCount == 4, currentAiCount == 5, currentAiCount == 6, currentAiCount == 7,
@@ -1139,4 +1138,139 @@ void Graphics::loadMinimap()
 
     minimapSprite.setTexture(minimapTexture);
     minimapSprite.setScale(minimapScale, minimapScale);
+}
+void Graphics::initTrackSelect(const std::vector<std::string> &imagePaths)
+{
+    trackSelectButtons.clear();
+    trackTextures.clear();
+    trackSprites.clear();
+
+    const size_t numTracks = imagePaths.size();
+    if (numTracks == 0)
+        return;
+
+    // 1. Resize upfront to guarantee direct index alignment across vectors
+    trackTextures.resize(numTracks);
+    trackSprites.resize(numTracks);
+
+    // 2. Calculate Grid Dimensions
+    int cols = 3;
+    if (numTracks <= 2)
+        cols = static_cast<int>(numTracks);
+    else if (numTracks == 4)
+        cols = 2;
+
+    const int rows = static_cast<int>((numTracks + cols - 1) / cols);
+
+    // 3. Layout Area & Card Sizing
+    const float areaX = 80.f, areaY = 130.f;
+    const float areaWidth = 1040.f, areaHeight = 520.f;
+    const float paddingX = 40.f, paddingY = 30.f;
+
+    // Clamped card dimensions prevent giant stretched cards when track count is low
+    float cardWidth = std::min(280.f, (areaWidth - (cols - 1) * paddingX) / cols);
+    float cardHeight = std::min(200.f, (areaHeight - (rows - 1) * paddingY) / rows);
+
+    const float gridWidth = cols * cardWidth + (cols - 1) * paddingX;
+    const float gridHeight = rows * cardHeight + (rows - 1) * paddingY;
+
+    const float startX = areaX + (areaWidth - gridWidth) / 2.f;
+    const float startY = areaY + (areaHeight - gridHeight) / 2.f;
+
+    // 4. Set up Cards & Assign Sprites by Direct Index
+    for (size_t i = 0; i < numTracks; ++i)
+    {
+        int r = static_cast<int>(i) / cols;
+        int c = static_cast<int>(i) % cols;
+
+        float bx = startX + c * (cardWidth + paddingX);
+        float by = startY + r * (cardHeight + paddingY);
+
+        trackSelectButtons.push_back(sf::FloatRect(bx, by, cardWidth, cardHeight));
+
+        if (trackTextures[i].loadFromFile(imagePaths[i]))
+        {
+            sf::Sprite sprite(trackTextures[i]);
+
+            float scaleX = (cardWidth - 20.f) / trackTextures[i].getSize().x;
+            float scaleY = (cardHeight - 50.f) / trackTextures[i].getSize().y;
+            sprite.setScale(scaleX, scaleY);
+            sprite.setPosition(bx + 10.f, by + 10.f);
+
+            trackSprites[i] = sprite;
+        }
+        else
+        {
+            std::cout << "Failed to load track image: " << imagePaths[i] << std::endl;
+            // trackSprites[i] remains a default-constructed sf::Sprite (safe empty draw)
+        }
+    }
+
+    // 5. Action Buttons (BACK & START)
+    const float btnY = 680.f, btnW = 200.f, btnH = 50.f;
+    trackSelectButtons.push_back(sf::FloatRect(350.f, btnY, btnW, btnH)); // Index: numTracks
+    trackSelectButtons.push_back(sf::FloatRect(650.f, btnY, btnW, btnH)); // Index: numTracks + 1
+}
+
+void Graphics::renderTrackSelectScreen(int currentSelectedTrackIndex)
+{
+    window.setView(hudView);
+    window.clear(sf::Color(20, 20, 25));
+
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
+
+    drawTextCentered("TRACK SELECT", 600.f, 70.f, 45, sf::Color::White);
+
+    const size_t numTracks = trackSelectButtons.size() >= 2 ? trackSelectButtons.size() - 2 : 0;
+
+    // 1. Draw Track Cards
+    for (size_t i = 0; i < numTracks; ++i)
+    {
+        sf::FloatRect rect = trackSelectButtons[i];
+        sf::RectangleShape button(sf::Vector2f(rect.width, rect.height));
+        button.setPosition(rect.left, rect.top);
+
+        bool isHovered = rect.contains(mappedMousePos);
+        bool isActive = (static_cast<int>(i) == currentSelectedTrackIndex);
+
+        button.setFillColor(isActive ? hoverFill : standardFill);
+        button.setOutlineColor(isHovered ? hoverOutline : (isActive ? sf::Color::White : standardOutline));
+        button.setOutlineThickness(isHovered ? 3.f : 2.f);
+
+        window.draw(button);
+
+        // Guaranteed strict 1:1 index mapping
+        window.draw(trackSprites[i]);
+
+        drawTextCentered("TRACK " + std::to_string(i + 1),
+                         rect.left + rect.width / 2.f,
+                         rect.top + rect.height - 20.f,
+                         18, sf::Color::White);
+    }
+
+    // 2. Draw Bottom Action Buttons ("BACK" & "START")
+    const std::string actionLabels[] = {"BACK", "START"};
+    for (size_t i = 0; i < 2; ++i)
+    {
+        size_t btnIndex = numTracks + i;
+        if (btnIndex < trackSelectButtons.size())
+        {
+            sf::FloatRect rect = trackSelectButtons[btnIndex];
+            sf::RectangleShape button(sf::Vector2f(rect.width, rect.height));
+            button.setPosition(rect.left, rect.top);
+
+            bool isHovered = rect.contains(mappedMousePos);
+
+            button.setFillColor(isHovered ? hoverFill : standardFill);
+            button.setOutlineColor(isHovered ? hoverOutline : standardOutline);
+            button.setOutlineThickness(isHovered ? 3.f : 2.f);
+
+            window.draw(button);
+            drawTextCentered(actionLabels[i],
+                             rect.left + rect.width / 2.f,
+                             rect.top + rect.height / 2.f,
+                             18, sf::Color::White);
+        }
+    }
 }

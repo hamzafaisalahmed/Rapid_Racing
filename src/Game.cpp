@@ -12,6 +12,11 @@
 #include "TrackLoader.h"
 void Game::resetLevel()
 {
+    if (currentTrackPathIndex != selectedTrackPathIndex)
+    {
+        currentTrackPathIndex = selectedTrackPathIndex;
+        trackInit();
+    }
     spectatorTarget = nullptr;
     spectatorModeToggled = aiSpectatorMode;
     bestLap = BESTLAP_INIT_VAL;
@@ -161,9 +166,6 @@ void Game::init()
     window.create(sf::VideoMode(1200, 800), "Rapid Racing", sf::Style::Default);
     window.setFramerateLimit(60);
 
-    trackLoader(track, "assets/tracks/track1.json");
-    waypoints = track.getWaypoints();
-
     player1.load("assets/textures/detail.png", "assets/textures/base.png");
     player2.load("assets/textures/detail.png", "assets/textures/base.png");
     player1.setTitle("PL1");
@@ -204,6 +206,11 @@ void Game::init()
     selectedCarLvl = 2;
     selectedLaps = 0;
 
+    trackPaths = {
+        "assets/tracks/track1.json"
+        // Add more track paths here as needed
+    };
+
     hudView = sf::View(sf::FloatRect(0.f, 0.f, 1200.f, 800.f));
 
     // Set up game view to show a reasonable portion of the track
@@ -211,8 +218,14 @@ void Game::init()
     gameView = sf::View(sf::FloatRect(0.f, 0.f, 300.f, 200.f));
     gameView.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
     window.setView(gameView);
-    graphics = std::make_unique<Graphics>(window, gameView, hudView, track, player1);
+    graphics = std::make_unique<Graphics>(window, gameView, hudView, track);
     graphics->init();
+    std::vector<std::string> trackImages;
+    for (auto track : trackPaths)
+    {
+        trackImages.push_back(getTrackMinimapPath(track));
+    }
+    graphics->initTrackSelect(trackImages);
     collisionHandler = std::make_unique<CollisionHandler>(track, cars);
     for (Car *car : cars)
     {
@@ -222,11 +235,16 @@ void Game::init()
 
     graphics->setCarColors(cars);
     stateManager = std::make_unique<StateManager>(engineAudio, endscreen, homeAudio, ambientEngineAudio);
-    wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
     maxVol = stateManager->getMaxVol();
     stateManager->pushHome();
 }
-
+void Game::trackInit()
+{
+    trackLoader(track, trackPaths[(size_t)currentTrackPathIndex]);
+    waypoints = track.getWaypoints();
+    wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
+    graphics->loadMinimap();
+}
 void Game::run()
 {
     sf::Clock clock;
@@ -245,7 +263,6 @@ void Game::run()
         window.display();
     }
 }
-
 void Game::handleEvents()
 {
     sf::Event event;
@@ -258,46 +275,46 @@ void Game::handleEvents()
         }
         else if (event.type == sf::Event::MouseButtonPressed)
         {
+            // ── Single, uniform mouse-position computation for every state branch ──
+            if (event.mouseButton.button != sf::Mouse::Left)
+                continue; // nothing below handles right/middle click; skip early
+
             sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window), hudView);
+
             if (stateManager->getCurrentState() == GameState::Home)
             {
-                if (event.mouseButton.button == sf::Mouse::Left)
+                const std::vector<sf::FloatRect> &hb = graphics->getHomeButtons();
+
+                for (size_t i = 0; i < hb.size(); ++i)
                 {
-                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                    sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
-
-                    std::vector<sf::FloatRect> hb = graphics->getHomeButtons();
-
-                    for (size_t i = 0; i < hb.size(); ++i)
+                    if (hb[i].contains(mousePos))
                     {
-                        if (hb[i].contains(mappedMousePos))
+                        if (i < 3)
                         {
-                            if (i < 3)
+                            if (i == 0)
                             {
-                                if (i == 0)
-                                {
-                                    selectedMode = Gamemode::AI;
-                                    stateManager->pushAISetup();
-                                    break;
-                                }
-                                else if (i == 1)
-                                    selectedMode = Gamemode::PVP;
-                                else if (i == 2)
-                                    selectedMode = Gamemode::TimeTrial;
-                                resetLevel();
-                                stateManager->pushPlaying();
+                                selectedMode = Gamemode::AI;
+                                stateManager->pushAISetup();
+                                break;
                             }
-                            else if (i == 3)
-                                stateManager->pushSettings();
+                            else if (i == 1)
+                                selectedMode = Gamemode::PVP;
+                            else if (i == 2)
+                                selectedMode = Gamemode::TimeTrial;
 
-                            break; // Exit loop once button action triggers
+                            resetLevel();
+                            stateManager->pushTrackSelect();
                         }
+                        else if (i == 3)
+                            stateManager->pushSettings();
+
+                        break;
                     }
                 }
             }
             else if (stateManager->getCurrentState() == GameState::LevelComplete)
             {
-                std::vector<sf::FloatRect> levelCompleteButtons = graphics->getLevelCompleteButtons();
+                const std::vector<sf::FloatRect> &levelCompleteButtons = graphics->getLevelCompleteButtons();
                 if (levelCompleteButtons[0].contains(mousePos))
                 {
                     resetLevel();
@@ -311,18 +328,13 @@ void Game::handleEvents()
             }
             else if (stateManager->getCurrentState() == GameState::Paused)
             {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
-
                 const auto &pauseScreenButtons = graphics->getPauseScreenButtons();
 
-                // 1. Check CONTINUE Button (Index 0)
-                if (pauseScreenButtons[0].contains(mappedMousePos))
+                if (pauseScreenButtons[0].contains(mousePos))
                 {
                     stateManager->pop();
                 }
-                // 2. Check EXIT TO MENU Button (Index 1)
-                else if (pauseScreenButtons[1].contains(mappedMousePos))
+                else if (pauseScreenButtons[1].contains(mousePos))
                 {
                     resetLevel();
                     stateManager->clear();
@@ -330,27 +342,23 @@ void Game::handleEvents()
             }
             else if (stateManager->getCurrentState() == GameState::Playing)
             {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                sf::Vector2f mappedMousePos = window.mapPixelToCoords(mousePos, hudView);
-
-                // Check if player clicked the top-right HUD pause icon
-                if (graphics->getPauseButton().contains(mappedMousePos))
+                if (graphics->getPauseButton().contains(mousePos))
                 {
                     stateManager->pushPause();
                 }
 
-                if (selectedMode != Gamemode::PVP && player1.isStuck() && graphics->getResetButton().contains(mappedMousePos))
+                if (selectedMode != Gamemode::PVP && player1.isStuck() && graphics->getResetButton().contains(mousePos))
                 {
                     player1.resetPosition(waypoints);
                 }
                 else
                 {
-                    const auto &ResetButtons = graphics->getResetButtonsPVP();
-                    if (player1.isStuck() && ResetButtons[0].contains(mappedMousePos))
+                    const auto &resetButtons = graphics->getResetButtonsPVP();
+                    if (player1.isStuck() && resetButtons[0].contains(mousePos))
                     {
                         player1.resetPosition(waypoints);
                     }
-                    if (player2.isStuck() && ResetButtons[1].contains(mappedMousePos))
+                    if (player2.isStuck() && resetButtons[1].contains(mousePos))
                     {
                         player2.resetPosition(waypoints);
                     }
@@ -358,14 +366,11 @@ void Game::handleEvents()
             }
             else if (stateManager->getCurrentState() == GameState::Settings)
             {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
-
                 const auto &buttons = graphics->getSettingsButtons();
 
                 for (size_t i = 0; i < buttons.size(); ++i)
                 {
-                    if (buttons[i].contains(mp))
+                    if (buttons[i].contains(mousePos))
                     {
                         if (i <= 2)
                         {
@@ -375,17 +380,17 @@ void Game::handleEvents()
                         {
                             selectedLaps = i - 3;
                         }
-                        else if (i == 7) // Mute is now index 7
+                        else if (i == 7) // Mute
                         {
                             stateManager->toggleMute();
                         }
-                        else if (i == 8) // Debug is now index 8
+                        else if (i == 8) // Debug
                         {
                             debugDisplay = !debugDisplay;
                             if (debugDisplay)
                                 wpHandler.debugWaypointData(waypoints);
                         }
-                        else if (i == 9) // Menu is now index 9
+                        else if (i == 9) // Menu
                         {
                             stateManager->pop();
                         }
@@ -395,42 +400,61 @@ void Game::handleEvents()
             }
             else if (stateManager->getCurrentState() == GameState::AISetup)
             {
-                if (event.mouseButton.button == sf::Mouse::Left)
+                const auto &buttons = graphics->getAISetupButtons();
+
+                for (size_t i = 0; i < buttons.size(); ++i)
                 {
-                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                    sf::Vector2f mp = window.mapPixelToCoords(mousePos, hudView);
-
-                    const auto &buttons = graphics->getAISetupButtons();
-
-                    for (size_t i = 0; i < buttons.size(); ++i)
+                    if (buttons[i].contains(mousePos))
                     {
-                        if (buttons[i].contains(mp))
-                        {
-                            if (i <= 6)
-                            { // AI Count 1-7
-                                selectedAICount = i + 1;
-                            }
-                            else if (i == 7)
-                            { // Spectator
-                                aiSpectatorMode = !aiSpectatorMode;
-                            }
-                            else if (i <= 10)
-                            { // Difficulty
-                                selectedDifficulty = i - 8;
-                            }
-                            else if (i == 11)
-                            { // BACK
-                                stateManager->pop();
-                            }
-                            else if (i == 12)
-                            { // START RACE
-                                resetLevel();
-                                stateManager->pop(); // Remove AISetup from stack
-                                stateManager->pushPlaying();
-                            }
-                            break;
+                        if (i <= 6)
+                        { // AI Count 1-7
+                            selectedAICount = i + 1;
                         }
+                        else if (i == 7)
+                        { // Spectator
+                            aiSpectatorMode = !aiSpectatorMode;
+                        }
+                        else if (i <= 10)
+                        { // Difficulty
+                            selectedDifficulty = i - 8;
+                        }
+                        else if (i == 11)
+                        { // BACK
+                            stateManager->pop();
+                        }
+                        else if (i == 12)
+                        { // START RACE
+                            stateManager->pushTrackSelect();
+                        }
+                        break;
                     }
+                }
+            }
+            else if (stateManager->getCurrentState() == GameState::TrackSelect)
+            {
+                size_t numTracks = trackPaths.size();
+                const auto &buttons = graphics->getTrackSelectButtons();
+
+                for (size_t i = 0; i < numTracks; ++i)
+                {
+                    if (buttons[i].contains(mousePos))
+                    {
+                        selectedTrackPathIndex = static_cast<int>(i);
+                        break;
+                    }
+                }
+
+                if (buttons.size() > numTracks && buttons[numTracks].contains(mousePos))
+                {
+                    stateManager->pop();
+                }
+                else if (buttons.size() > numTracks + 1 && buttons[numTracks + 1].contains(mousePos))
+                {
+                    resetLevel();
+                    stateManager->pop();
+                    if (selectedMode == Gamemode::AI)
+                        stateManager->pop();
+                    stateManager->pushPlaying();
                 }
             }
         }
@@ -451,7 +475,7 @@ void Game::handleEvents()
                         spectatorTarget = next;
                 }
             }
-            // FOR DEBUG ONLY
+
             if (debugDisplay && stateManager->getCurrentState() == GameState::Playing && sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
             {
                 stateManager->pushLevelComplete();
@@ -648,14 +672,14 @@ void Game::render()
         if (selectedMode == Gamemode::TimeTrial)
         {
             graphics->renderGamePlay(cars, &player1, debugDisplay);
-            graphics->renderHUD(totalRaceTime, player1.getCurrLap(), totalLaps);
+            graphics->renderTTHUD(player1, totalRaceTime, player1.getCurrLap(), totalLaps);
             if (player1.isStuck())
                 graphics->renderResetButton(selectedMode);
         }
         else if (selectedMode == Gamemode::PVP)
         {
-            graphics->renderPVPGameplay(player2, debugDisplay);
-            graphics->renderPVPHUD(player2, totalLaps, totalRaceTime);
+            graphics->renderPVPGameplay(player1, player2, debugDisplay);
+            graphics->renderPVPHUD(player1, player2, totalLaps, totalRaceTime);
             graphics->renderResetButton(selectedMode, player1.isStuck(), player2.isStuck());
         }
         else if (selectedMode == Gamemode::AI)
@@ -664,7 +688,7 @@ void Game::render()
             Car *cameraFocus = (spectating && spectatorTarget) ? spectatorTarget : &player1;
 
             graphics->renderGamePlay(cars, cameraFocus, debugDisplay);
-            graphics->renderAIHUD(raceLeaderboard, totalLaps, totalRaceTime, spectating);
+            graphics->renderAIHUD(player1, raceLeaderboard, totalLaps, totalRaceTime, spectating);
 
             if (!spectating && player1.isStuck())
                 graphics->renderResetButton(selectedMode);
@@ -688,7 +712,7 @@ void Game::render()
             graphics->renderLevelComplete(bestLapHolder->getLapData(), leaderboardManager.loadLapTimes());
         else if (selectedMode == Gamemode::PVP)
         {
-            graphics->renderPVPLvlComplete(player2, raceLeaderboard);
+            graphics->renderPVPLvlComplete(player1, player2, raceLeaderboard);
         }
         else if (selectedMode == Gamemode::AI)
         {
@@ -706,6 +730,10 @@ void Game::render()
     else if (stateManager->getCurrentState() == GameState::AISetup)
     {
         graphics->renderAISetupScreen(selectedAICount, aiSpectatorMode, selectedDifficulty);
+    }
+    else if (stateManager->getCurrentState() == GameState::TrackSelect)
+    {
+        graphics->renderTrackSelectScreen(selectedTrackPathIndex);
     }
 }
 

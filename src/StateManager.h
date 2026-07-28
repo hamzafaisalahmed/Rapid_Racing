@@ -29,4 +29,5 @@ public:
     GameState getCurrentState() { return stateStack.top(); }
     void stopAudio();
     float getMaxVol() const { return maxVol; }
+    void pushTrackSelect();
 };

@@ -25,6 +25,10 @@ class Track
     std::string minimapImagePath;
 
 public:
+    Track() : startPosA(0.f), startPosB1(0.f), startPosB2(0.f), startRowSpacing(0.f), startAngle(0.f)
+    {
+        minimapImagePath = "";
+    }
     void loadTrackImage(const std::string &dir)
     {
         try

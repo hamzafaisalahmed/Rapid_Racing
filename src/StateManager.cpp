@@ -108,3 +108,8 @@ void StateManager::pushAISetup()
 {
     stateStack.push(GameState::AISetup);
 }
+
+void StateManager::pushTrackSelect()
+{
+    stateStack.push(GameState::TrackSelect);
+}

@@ -72,6 +72,9 @@ class Game
     bool debugDisplay = false;
 
     float maxVol;
+    int currentTrackPathIndex = -1;
+    int selectedTrackPathIndex = 0;
+    std::vector<std::string> trackPaths;
 
 public:
     void init();
@@ -87,6 +90,7 @@ public:
     void updateRacePositions();
     bool carPosition(const Car &a, const Car &b);
     void updateEngineAudio(float dt);
+    void trackInit();
     ~Game()
     {
         for (size_t i = 2; i < cars.size(); ++i)
