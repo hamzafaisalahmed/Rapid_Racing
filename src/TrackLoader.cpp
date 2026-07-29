@@ -14,7 +14,6 @@ void trackLoader(Track &track, const std::string &jsonFilePath)
     if (imagePath.empty())
         throw std::runtime_error("Missing 'image' in track: " + jsonFilePath);
     track.loadTrackImage(imagePath);
-
     if (j.contains("friction"))
     {
         track.setFriction(j["friction"].get<float>());
@@ -58,6 +57,8 @@ void trackLoader(Track &track, const std::string &jsonFilePath)
     track.setStartPosB2(j["startPosB2"].get<float>());
     track.setStartRowSpacing(j["startRowSpacing"].get<float>());
     track.setStartAngle(j["startAngle"].get<float>());
+    track.setMinimapScale(j["minimapScale"].get<float>());
+    track.setID(j["id"].get<int>());
 }
 
 std::string getTrackMinimapPath(const std::string &jsonFilePath)

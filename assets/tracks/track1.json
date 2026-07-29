@@ -1,6 +1,6 @@
 {
     "image": "assets/textures/track1.png",
-    "minimapImage": "assets/textures/track1mini.png",
+    "minimapImage": "assets/textures/minimap1.png",
     "friction": 0.998,
     "wallColor": [
         0,
@@ -13,6 +13,8 @@
     "startPosB2": 2600,
     "startRowSpacing": 45,
     "startAngle": 90,
+    "minimapScale": 0.05,
+    "id": 1,
     "waypoints": [
         [
             1754,

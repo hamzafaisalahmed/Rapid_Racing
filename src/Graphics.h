@@ -23,8 +23,6 @@ class Graphics
 
     sf::Texture minimapTexture;
     sf::Sprite minimapSprite;
-    const float minimapScale = 0.05f;
-
     sf::Color standardFill;
     sf::Color standardOutline;
     sf::Color standardText;

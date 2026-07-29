@@ -23,9 +23,11 @@ class Track
     float startRowSpacing;
     float startAngle;
     std::string minimapImagePath;
+    float minimapScale;
+    int id;
 
 public:
-    Track() : startPosA(0.f), startPosB1(0.f), startPosB2(0.f), startRowSpacing(0.f), startAngle(0.f)
+    Track() : startPosA(0.f), startPosB1(0.f), startPosB2(0.f), startRowSpacing(0.f), startAngle(0.f), minimapScale(0.f)
     {
         minimapImagePath = "";
     }
@@ -214,5 +216,9 @@ public:
     float getStartRowSpacing() const { return startRowSpacing; }
     void setStartAngle(float angle) { startAngle = angle; }
     float getStartAngle() const { return startAngle; }
+    void setMinimapScale(float s) { minimapScale = s; }
+    float getMinimapScale() const { return minimapScale; }
+    void setID(int ID) { id = ID; }
+    float getID() const { return id; }
     ~Track() = default;
 };

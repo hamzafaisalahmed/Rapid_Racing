@@ -20,7 +20,7 @@ struct LapTime
     std::string title;
     float bestLap;
     float currentLapTime;
-
+    int trackID;
     LapTime() : bestLap(BESTLAP_INIT_VAL), currentLapTime(0) {}
 };
 

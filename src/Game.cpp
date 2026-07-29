@@ -52,6 +52,7 @@ void Game::resetLevel()
         car->setCurrLap(1);
         car->resetAllLapTime();
         car->setFinishedRace(false);
+        car->setTrackID(track.getID());
         if (car->isAI())
         {
             AI *aiCar = static_cast<AI *>(car);
@@ -63,6 +64,7 @@ void Game::resetLevel()
     totalRaceTime = 0.f;
 
     const float y1 = track.getStartPosB1();
+    std::cout << y1 << std::endl;
     const float y2 = track.getStartPosB2();
     const float baseX = track.getStartPosA();
     const float rowSpacing = track.getStartRowSpacing();
@@ -207,7 +209,8 @@ void Game::init()
     selectedLaps = 0;
 
     trackPaths = {
-        "assets/tracks/track1.json"
+        "assets/tracks/track1.json",
+        "assets/tracks/track2.json"
         // Add more track paths here as needed
     };
 
@@ -387,8 +390,8 @@ void Game::handleEvents()
                         else if (i == 8) // Debug
                         {
                             debugDisplay = !debugDisplay;
-                            if (debugDisplay)
-                                wpHandler.debugWaypointData(waypoints);
+                            // if (debugDisplay)
+                            //     wpHandler.debugWaypointData(waypoints);
                         }
                         else if (i == 9) // Menu
                         {

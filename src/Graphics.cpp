@@ -276,10 +276,12 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
 
     // 3. Header
     drawTextCentered("TIME TRIAL COMPLETE!", 600.f, 240.f, 35, sf::Color::White);
-
+    int trackId = track.getID();
     // 4. Global Top 3 Loop
     for (size_t i = 0; i < std::min<size_t>(3, allTimes.size()); ++i)
     {
+        if (allTimes[i].trackID != trackId)
+            continue;
         std::string label = (i == 0) ? "1ST: " : (i == 1) ? "2ND: "
                                                           : "3RD: ";
 
@@ -654,17 +656,20 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
 {
     window.setView(hudView);
 
-    float minimapWidth = minimapTexture.getSize().x * minimapScale;
-    float minimapHeight = minimapTexture.getSize().y * minimapScale;
+    float displayScale = track.getMinimapScale(); // authored per-track, for on-screen sizing — keep as-is
+    float minimapWidth = minimapTexture.getSize().x * displayScale;
+    float minimapHeight = minimapTexture.getSize().y * displayScale;
 
-    // Position based on mode
-    float minimapX = (mode != Gamemode::PVP) ? (10.f) :           // Bottom-right for single player
-                         ((1200.f / 2.f) - (minimapWidth / 2.f)); // Bottom-center for multiplayer
+    // NEW: actual world-coordinate -> minimap-image ratio, independent of display scale
+    sf::Vector2u trackSize = track.getSize();
+    sf::Vector2u minimapSize = minimapTexture.getSize();
+    float worldToMinimapX = (float)minimapSize.x / (float)trackSize.x;
+    float worldToMinimapY = (float)minimapSize.y / (float)trackSize.y;
 
+    float minimapX = (mode != Gamemode::PVP) ? (10.f) : ((1200.f / 2.f) - (minimapWidth / 2.f));
     float minimapY = 800.f - minimapHeight - 10.f;
     minimapSprite.setPosition(minimapX, minimapY);
 
-    // Background box
     sf::RectangleShape minimapBox(sf::Vector2f(minimapWidth + 20.f, minimapHeight + 20.f));
     minimapBox.setPosition(minimapX - 10.f, minimapY - 10.f);
     minimapBox.setFillColor(sf::Color(20, 5, 8, 220));
@@ -673,23 +678,24 @@ void Graphics::renderMinimap(const std::vector<Car *> &cars, Gamemode mode)
     window.draw(minimapBox);
     window.draw(minimapSprite);
 
-    // Draw cars
     for (size_t i = 0; i < cars.size(); ++i)
     {
         if (!cars[i]->getActive())
             continue;
-        sf::CircleShape dot(4.f);
 
+        sf::CircleShape dot(4.f);
         const sf::Uint8 lightnessBoost = 60;
         sf::Color original = carColors[i];
         sf::Color minimapColor(
             std::min(255, original.r + lightnessBoost),
             std::min(255, original.g + lightnessBoost),
             std::min(255, original.b + lightnessBoost));
-
         dot.setFillColor(minimapColor);
 
-        sf::Vector2f minimapPos = cars[i]->getPosition() * minimapScale;
+        sf::Vector2f worldPos = cars[i]->getPosition();
+        sf::Vector2f minimapPos(
+            worldPos.x * worldToMinimapX * displayScale,
+            worldPos.y * worldToMinimapY * displayScale);
         minimapPos.x += minimapX;
         minimapPos.y += minimapY;
 
@@ -1137,6 +1143,7 @@ void Graphics::loadMinimap()
         throw std::runtime_error("Minimap texture not found");
 
     minimapSprite.setTexture(minimapTexture);
+    float minimapScale = track.getMinimapScale();
     minimapSprite.setScale(minimapScale, minimapScale);
 }
 void Graphics::initTrackSelect(const std::vector<std::string> &imagePaths)

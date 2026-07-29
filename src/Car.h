@@ -123,6 +123,7 @@ public:
 
     virtual bool isAI() const { return false; }
 
+    void setTrackID(int id) { lapData.trackID = id; }
     float getBestLapTime() const { return lapData.bestLap; }
     void updateCurrentLapTime(float dt) { lapData.currentLapTime += dt; }
     void resetCurrentLapTime()
