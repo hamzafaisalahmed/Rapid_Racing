@@ -305,7 +305,6 @@ void Game::handleEvents()
                             else if (i == 2)
                                 selectedMode = Gamemode::TimeTrial;
 
-                            resetLevel();
                             stateManager->pushTrackSelect();
                         }
                         else if (i == 3)

@@ -12,6 +12,6 @@ int main()
     {
         std::cout << "Fatal error" << std::endl;
         for (int i = 0; i < 10000; i++)
-            std::cout << " ERRORR";
+            std::cout << " ERROR";
     }
 }
