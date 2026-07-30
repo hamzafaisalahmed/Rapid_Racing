@@ -93,7 +93,7 @@ public:
     float getTurnFactor() const;
     void handleMovement(float dt, carInput xIn, carInput yIn, float friction);
 
-    bool updateWaypoint(const std::vector<Waypoint> &waypoints);
+    bool updateWaypoint(const std::vector<Waypoint> &waypoints, float scaleFactor);
     int getCurrWaypointIndex() const { return currWaypointIndex; }
     void resetWaypointIndex() { currWaypointIndex = 0; }
     int getCurrLap() const { return currLap; }

@@ -194,11 +194,26 @@ void Car::handleMovement(float dt, carInput xIn, carInput yIn, float friction)
     setAngle(lerp(oldAngle, angle, 0.6f));
 }
 
-bool Car::updateWaypoint(const std::vector<Waypoint> &waypoints)
+bool Car::updateWaypoint(const std::vector<Waypoint> &waypoints, float scaleFactor)
 {
-    if (distance(waypoints[currWaypointIndex].mid, getPosition()) < (69.f * 69.f))
+    const Waypoint &wp = waypoints[currWaypointIndex];
+    float roadWidth = magnitude(wp.right - wp.left);
+    sf::Vector2f pos = getPosition();
+    if (distance(wp.mid, pos) > (roadWidth * roadWidth))
+        return false;
+
+    // Stage 2: stricter check against mid, left, and right — covers any lane position
+    float strictRadius = (69.f * scaleFactor); // back to a tight, track-scaled radius
+    float strictRadiusSq = strictRadius * strictRadius;
+
+    bool reached = distance(wp.mid, pos) < strictRadiusSq ||
+                   distance(wp.left, pos) < strictRadiusSq ||
+                   distance(wp.right, pos) < strictRadiusSq;
+
+    if (reached)
     {
         currWaypointIndex++;
+        std::cout << "waypoint: " << currWaypointIndex << std::endl;
         if ((size_t)currWaypointIndex >= waypoints.size())
         {
             currWaypointIndex = 0;

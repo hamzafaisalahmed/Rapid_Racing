@@ -13,8 +13,9 @@ AIController::AIController(AI *car, const std::vector<Waypoint> &waypoints, cons
     aggro = minAggro;
 }
 
-void AIController::reset()
+void AIController::reset(float scaleFactor)
 {
+    this->scaleFactor = scaleFactor;
     currentLane = TargetSide::Right;
     horizontalInput = carInput::None;
     verticalInput = carInput::None;
@@ -145,7 +146,7 @@ void AIController::updateTrafficAwareness(const std::vector<Car *> &leaderboard)
     sf::Vector2f heading = car->getDirectionVector();
     sf::Vector2f perp = car->getPerpendicularVector();
 
-    float projectDist = std::max(trafficCheckDist, car->getCurrSpeed() * 0.6f);
+    float projectDist = std::max(trafficCheckDist * scaleFactor, car->getCurrSpeed() * 0.6f);
 
     // Added a 20% safety margin to the width so it doesn't clip corners
     float halfWidth = magnitude(frontRight - frontLeft) * 0.5f * 1.2f;
@@ -236,7 +237,7 @@ bool AIController::isLaneClear(TargetSide lane, const std::vector<Car *> &leader
             float alongDist = dotProduct(toPoint, heading);
 
             // 1. Is this point within our forward/backward danger zone?
-            if (std::abs(alongDist) <= sideCorridorHalfLen)
+            if (std::abs(alongDist) <= sideCorridorHalfLen * scaleFactor)
             {
                 float pointLateral = dotProduct(toPoint, perp);
 
@@ -283,7 +284,7 @@ sf::Vector2f AIController::getPassingOverrideTarget(TargetSide lane) const
     float projT = (segLen > 0.0001f) ? clamp(dotProduct(toCar, segDir) / segLen, 0.f, 1.f) : 0.f;
     sf::Vector2f centerlinePoint = waypoints[prevIdx].mid + segDir * (projT * segLen);
 
-    float forwardDist = std::max(minPassingLookahead, car->getCurrSpeed() * 0.6f);
+    float forwardDist = std::max(minPassingLookahead * scaleFactor, car->getCurrSpeed() * 0.6f);
 
     sf::Vector2f fullLaneTarget = getRailOffset(currIdx, lane); // full rail, not halved
     sf::Vector2f fullMidTarget = getRailOffset(currIdx, TargetSide::Mid);
@@ -486,7 +487,7 @@ void AIController::updateState(const std::vector<Car *> &leaderboard, float dt)
         }
 
         float movedDist = magnitude(car->getPosition() - passingLastPos);
-        if (movedDist < 5.f)
+        if (movedDist < 5.f * scaleFactor)
             passingStuckTime += dt;
         else
         {

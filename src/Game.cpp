@@ -57,14 +57,13 @@ void Game::resetLevel()
         {
             AI *aiCar = static_cast<AI *>(car);
             if (aiCar->aiController)
-                aiCar->aiController->reset();
+                aiCar->aiController->reset(track.getScaleFactor());
         }
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
 
     const float y1 = track.getStartPosB1();
-    std::cout << y1 << std::endl;
     const float y2 = track.getStartPosB2();
     const float baseX = track.getStartPosA();
     const float rowSpacing = track.getStartRowSpacing();
@@ -245,7 +244,7 @@ void Game::trackInit()
 {
     trackLoader(track, trackPaths[(size_t)currentTrackPathIndex]);
     waypoints = track.getWaypoints();
-    wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed);
+    wpHandler.init(waypoints, carPresets[(size_t)selectedCarLvl].maxSpeed, track.getScaleFactor());
     graphics->loadMinimap();
 }
 void Game::run()
@@ -389,8 +388,8 @@ void Game::handleEvents()
                         else if (i == 8) // Debug
                         {
                             debugDisplay = !debugDisplay;
-                            // if (debugDisplay)
-                            //     wpHandler.debugWaypointData(waypoints);
+                            if (debugDisplay)
+                                wpHandler.debugWaypointData(waypoints, track.getScaleFactor());
                         }
                         else if (i == 9) // Menu
                         {
@@ -694,11 +693,9 @@ void Game::render()
 
             if (!spectating && player1.isStuck())
                 graphics->renderResetButton(selectedMode);
-
-            if (debugDisplay)
-                graphics->debugWaypointAI(wpHandler, track.getWaypoints());
         }
-
+        if (debugDisplay)
+            graphics->debugWaypointAI(wpHandler, track.getWaypoints());
         graphics->renderMinimap(cars, selectedMode);
         if (countdownMode)
             graphics->renderCountdown(countdownTime);
@@ -741,7 +738,7 @@ void Game::render()
 
 void Game::checkWinner(Car *car)
 {
-    if (car->updateWaypoint(waypoints))
+    if (car->updateWaypoint(waypoints, track.getScaleFactor()))
     {
         car->incrementLaps();
         car->resetCurrentLapTime(); // must run first so THIS lap's time is in lapData.bestLap

@@ -28,12 +28,12 @@ struct WaypointHandler
     std::vector<CornerZone> cornerZones;
     float straightThreshold = 0.f; // derived, not hardcoded
 
-    void init(const std::vector<Waypoint> &waypoints, float maxSpeed);
-    void debugWaypointData(const std::vector<Waypoint> &waypoints);
+    void init(const std::vector<Waypoint> &waypoints, float maxSpeed, float scaleFactor);
+    void debugWaypointData(const std::vector<Waypoint> &waypoints, float scaleFactor);
 
 private:
     void computeCurvature(const std::vector<Waypoint> &waypoints);
-    void smoothCurvature(const std::vector<Waypoint> &waypoints);
+    void smoothCurvature(const std::vector<Waypoint> &waypoints, float scaleFactor);
     void detectCornerZones();
-    void computeBrakeZones(const std::vector<Waypoint> &waypoints, float maxSpeed);
+    void computeBrakeZones(const std::vector<Waypoint> &waypoints, float maxSpeed, float scaleFactor);
 };

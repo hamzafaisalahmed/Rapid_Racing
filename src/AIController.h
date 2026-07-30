@@ -20,7 +20,7 @@ public:
     AIController(AI *car, const std::vector<Waypoint> &waypoints, const WaypointHandler &wpHandler, int gridSlot);
 
     void update(const std::vector<Car *> &cars, float dt);
-    void reset();
+    void reset(float scaleFactor);
 
     carInput getHorizontalInput() const { return horizontalInput; }
     carInput getVerticalInput() const { return verticalInput; }
@@ -117,4 +117,5 @@ private:
     float defenseFatigue = 0.f;
     float defenseFatigueThreshold = 4.f; // aggro-scaled
     const float defenseFatigueDecay = 2.f;
+    float scaleFactor = 1.f; // track scale factor, set at reset
 };

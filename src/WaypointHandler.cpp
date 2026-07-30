@@ -3,15 +3,15 @@
 #include <cmath>
 #include <algorithm>
 
-void WaypointHandler::init(const std::vector<Waypoint> &waypoints, float maxSpeed)
+void WaypointHandler::init(const std::vector<Waypoint> &waypoints, float maxSpeed, float scaleFactor)
 {
     data.assign(waypoints.size(), WaypointAIData());
     cornerZones.clear();
 
     computeCurvature(waypoints);
-    smoothCurvature(waypoints);
+    smoothCurvature(waypoints, scaleFactor);
     detectCornerZones();
-    computeBrakeZones(waypoints, maxSpeed);
+    computeBrakeZones(waypoints, maxSpeed, scaleFactor);
 }
 
 void WaypointHandler::computeCurvature(const std::vector<Waypoint> &waypoints)
@@ -57,11 +57,10 @@ void WaypointHandler::computeCurvature(const std::vector<Waypoint> &waypoints)
     }
 }
 
-void WaypointHandler::smoothCurvature(const std::vector<Waypoint> &waypoints)
+void WaypointHandler::smoothCurvature(const std::vector<Waypoint> &waypoints, float scaleFactor)
 {
     size_t n = waypoints.size();
-    const float smoothRadius = 80.f;
-
+    const float smoothRadius = 80.f * scaleFactor;
     std::vector<float> smoothed(n, 0.f);
 
     for (size_t i = 0; i < n; ++i)
@@ -202,10 +201,10 @@ void WaypointHandler::detectCornerZones()
     }
 }
 
-void WaypointHandler::computeBrakeZones(const std::vector<Waypoint> &waypoints, float maxSpeed)
+void WaypointHandler::computeBrakeZones(const std::vector<Waypoint> &waypoints, float maxSpeed, float scaleFactor)
 {
     size_t n = waypoints.size();
-    const float baseDistance = 60.f;
+    const float baseDistance = 60.f * scaleFactor;
     const float angleScale = 4.f;
     const float minApexSpeedFrac = 0.35f;
 
@@ -271,8 +270,11 @@ void WaypointHandler::computeBrakeZones(const std::vector<Waypoint> &waypoints, 
     }
 }
 
-void WaypointHandler::debugWaypointData(const std::vector<Waypoint> &waypoints)
+void WaypointHandler::debugWaypointData(const std::vector<Waypoint> &waypoints, float scaleFactor)
 {
+    const float angleScale = 4.f * scaleFactor; // mirror computeBrakeZones' actual scaled constants
+    const float baseDistance = 60.f * scaleFactor;
+
     for (size_t i = 0; i < cornerZones.size(); ++i)
     {
         const auto &z = cornerZones[i];
@@ -285,13 +287,18 @@ void WaypointHandler::debugWaypointData(const std::vector<Waypoint> &waypoints)
             totalStraightLen += magnitude(waypoints[idx].mid - waypoints[p].mid);
             idx = p;
         }
-        float brakeDist = 60.f + 4.f * z.totalAngle;
+        float brakeDist = baseDistance + angleScale * z.totalAngle;
         std::cout << "Zone " << i << ": start=" << z.start << " apex=" << z.apex << " end=" << z.end
                   << " totalAngle=" << z.totalAngle << " peakCurv=" << z.peakCurvature
                   << " brakeDist=" << brakeDist << " availableStraight=" << totalStraightLen << "\n";
     }
-    std::cout << "straightThreshold=" << straightThreshold << "\n";
-    for (int i = 53; i <= 61; ++i)
+    std::cout << "straightThreshold=" << straightThreshold << " scaleFactor=" << scaleFactor << "\n";
+
+    // Print a representative sample around the middle of the track instead of a fixed range
+    size_t n = data.size();
+    size_t sampleCount = std::min<size_t>(9, n);
+    size_t sampleStart = (n > sampleCount) ? (n / 2) - (sampleCount / 2) : 0;
+    for (size_t i = sampleStart; i < sampleStart + sampleCount; ++i)
         std::cout << "idx=" << i << " curvature=" << data[i].curvature
                   << " zoneID=" << data[i].cornerZoneID << "\n";
 }

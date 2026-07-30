@@ -135,3 +135,13 @@ enum class TargetSide : int
     Mid = 1,
     Right = 2
 };
+
+const float REFERENCE_TRACK_WIDTH = 4800.f;
+const float REFERENCE_TRACK_HEIGHT = 3200.f;
+
+inline float computeTrackScaleFactor(sf::Vector2u trackSize)
+{
+    float refDiagonal = std::sqrt(REFERENCE_TRACK_WIDTH * REFERENCE_TRACK_WIDTH + REFERENCE_TRACK_HEIGHT * REFERENCE_TRACK_HEIGHT);
+    float thisDiagonal = std::sqrt((float)(trackSize.x * trackSize.x) + (float)(trackSize.y * trackSize.y));
+    return thisDiagonal / refDiagonal;
+}
