@@ -1142,7 +1142,7 @@ void Graphics::loadMinimap()
     if (!minimapTexture.loadFromFile(track.getMinimapImagePath()))
         throw std::runtime_error("Minimap texture not found");
 
-    minimapSprite.setTexture(minimapTexture);
+    minimapSprite.setTexture(minimapTexture, true);
     float minimapScale = track.getMinimapScale();
     minimapSprite.setScale(minimapScale, minimapScale);
 }

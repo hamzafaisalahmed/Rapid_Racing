@@ -43,7 +43,7 @@ public:
             else
             {
                 trackImage = trackTexture.copyToImage();
-                trackSprite.setTexture(trackTexture);
+                trackSprite.setTexture(trackTexture, true);
                 trackSprite.setPosition(0.f, 0.f);
                 computeScaleFactor();
             }

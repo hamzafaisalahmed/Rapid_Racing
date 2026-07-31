@@ -213,7 +213,6 @@ bool Car::updateWaypoint(const std::vector<Waypoint> &waypoints, float scaleFact
     if (reached)
     {
         currWaypointIndex++;
-        std::cout << "waypoint: " << currWaypointIndex << std::endl;
         if ((size_t)currWaypointIndex >= waypoints.size())
         {
             currWaypointIndex = 0;
