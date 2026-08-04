@@ -62,10 +62,6 @@ add_custom_command(TARGET Rapid_Racing POST_BUILD
     COMMENT "Updating assets in build directory..."
 )
 
-option(BUILD_TESTS "Build the unit test suite" ON)
-
-# ... game executable target as-is ...
-
 if(BUILD_TESTS)
     include(FetchContent)
     FetchContent_Declare(
