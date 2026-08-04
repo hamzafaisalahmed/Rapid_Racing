@@ -12,6 +12,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ============================================================
 find_package(SFML 2.6 COMPONENTS graphics window system audio REQUIRED)
 
+
+option(BUILD_TESTS "Build the unit test suite" ON)
 # ============================================================
 # GAME EXECUTABLE
 # ============================================================
@@ -60,56 +62,51 @@ add_custom_command(TARGET Rapid_Racing POST_BUILD
     COMMENT "Updating assets in build directory..."
 )
 
-# ============================================================
-# CATCH2 AUTOMATED TESTS
-# ============================================================
+option(BUILD_TESTS "Build the unit test suite" ON)
 
-# 1. Fetch Catch2 v3 automatically from GitHub
-include(FetchContent)
-FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.5.2
-)
-FetchContent_MakeAvailable(Catch2)
+# ... game executable target as-is ...
 
-# 2. Allow test files to #include "WaypointHandler.h" directly
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+if(BUILD_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+      Catch2
+      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+      GIT_TAG        v3.5.2
+    )
+    FetchContent_MakeAvailable(Catch2)
 
-# 3. Test Executable Target
-# Note: Include game .cpp logic files needed by tests, but EXCLUDE src/main.cpp!
-add_executable(unit_tests
-    tests/test_utils.cpp      
-    tests/test_waypointhandler.cpp
-    tests/test_collisions.cpp
-    src/WaypointHandler.cpp
-    src/AIController.cpp
-    src/Car.cpp
-    src/CollisionHandler.cpp
-    src/TrackLoader.cpp
-)
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-# 4. Link Catch2's main runner and SFML
-target_link_libraries(unit_tests
-    PRIVATE
-        Catch2::Catch2WithMain
-        sfml-graphics
-        sfml-window
-        sfml-system
-        sfml-audio
-)
+    add_executable(unit_tests
+        tests/test_utils.cpp
+        tests/test_waypointhandler.cpp
+        tests/test_collisions.cpp
+        src/WaypointHandler.cpp
+        src/AIController.cpp
+        src/Car.cpp
+        src/CollisionHandler.cpp
+        src/TrackLoader.cpp
+    )
 
-target_compile_options(unit_tests PRIVATE -Wall)
+    target_link_libraries(unit_tests
+        PRIVATE
+            Catch2::Catch2WithMain
+            sfml-graphics
+            sfml-window
+            sfml-system
+            sfml-audio
+    )
 
-# 5. Copy assets folder so tests can load track JSONs or textures if needed
-add_custom_command(TARGET unit_tests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:unit_tests>/assets"
-    COMMENT "Updating assets for unit tests..."
-)
+    target_compile_options(unit_tests PRIVATE -Wall)
 
-# 6. Enable CTest support for automated test discovery
-include(CTest)
-include(Catch)
-catch_discover_tests(unit_tests)
+    add_custom_command(TARGET unit_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:unit_tests>/assets"
+        COMMENT "Updating assets for unit tests..."
+    )
+
+    include(CTest)
+    include(Catch)
+    catch_discover_tests(unit_tests)
+endif()
