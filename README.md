@@ -94,6 +94,7 @@ these are currently validated through manual playtesting.
 - Track images should be a centered crop of the track itself (track fills the
   frame, minimal padding) at any resolution, as `scaleFactor` is derived from
   the image's pixel diagonal, which several distance constants (braking distance, smoothing radius) scale against.
+- Starting grid should be straight, either horizontal or vertical. Diagonal or angled starting grid is not supported.
 
 ## Extendability
 
