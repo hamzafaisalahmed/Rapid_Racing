@@ -14,7 +14,6 @@ bool CollisionHandler::handleCollision(Car *car, sf::Vector2f pos, float angle, 
     {
         impactCarryover result = handleCollisionResponse(wallIndex, car, pos, angle, oldPos, oldAngle, dt);
         car->setCurrSpeed(result.speed);
-        // car->setAngle(result.angle);
         car->setAngularVelocity(result.angularVelocity);
 
         pos = oldPos + result.pos;
@@ -111,20 +110,6 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
     }
     else
     {
-        // bool flag = false;
-        // for (int i = 0; i < tunnelingChecks; i++)
-        // {
-        //     sf::Vector2f test = oldPos + ((i + 1) / float(tunnelingChecks)) * (pos - oldPos);
-        //     float testAngle = oldAngle + ((i + 1) / float(tunnelingChecks)) * (angle - oldAngle);
-        //     if (checkWallCollisions(car, test, testAngle) == -1)
-        //     {
-        //         returnValue.pos = ((i + 1) / 5.f) * (pos - oldPos);
-        //         car->setAngle(testAngle);
-        //         flag = true;
-        //         break;
-        //     }
-        // }
-        // if (!flag)
         {
             car->setAngle(oldAngle);
             car->setCurrSpeed(0.f);

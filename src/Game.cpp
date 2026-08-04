@@ -63,10 +63,6 @@ void Game::resetLevel()
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
 
-    // const float y1 = track.getStartPosB1();
-    // const float y2 = track.getStartPosB2();
-    // const float baseX = track.getStartPosA();
-    // const float rowSpacing = track.getStartRowSpacing();
     const float posA = track.getStartPosA();
     const float posB1 = track.getStartPosB1();
     const float posB2 = track.getStartPosB2();

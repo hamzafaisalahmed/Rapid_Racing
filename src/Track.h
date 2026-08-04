@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
+#include <vector>
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <stdexcept>
 #include "Utils.h"
-using namespace std;
 
 class Track
 {
