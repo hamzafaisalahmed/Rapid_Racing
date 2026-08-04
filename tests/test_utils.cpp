@@ -84,3 +84,36 @@ TEST_CASE("Track Scaling & Formatting", "[utils]")
         REQUIRE(wp.mid.y == Catch::Approx(20.0f)); // (20 + 20) / 2
     }
 }
+
+#include "Utils.h"
+#include <catch2/catch_test_macros.hpp>
+
+TEST_CASE("normalizeAngle", "[utils][math]")
+{
+    // Rounding
+    REQUIRE(normalizeAngle(45.2f) == 45);
+    REQUIRE(normalizeAngle(45.8f) == 46);
+    REQUIRE(normalizeAngle(359.6f) == 0); // rounds to 360 -> 0
+
+    // Positive angles
+    REQUIRE(normalizeAngle(0.f) == 0);
+    REQUIRE(normalizeAngle(90.f) == 90);
+    REQUIRE(normalizeAngle(180.f) == 180);
+    REQUIRE(normalizeAngle(270.f) == 270);
+    REQUIRE(normalizeAngle(359.f) == 359);
+    REQUIRE(normalizeAngle(360.f) == 0);
+    REQUIRE(normalizeAngle(450.f) == 90);
+
+    // Negative angles
+    REQUIRE(normalizeAngle(-1.f) == 359);
+    REQUIRE(normalizeAngle(-90.f) == 270);
+    REQUIRE(normalizeAngle(-180.f) == 180);
+    REQUIRE(normalizeAngle(-270.f) == 90);
+    REQUIRE(normalizeAngle(-359.f) == 1);
+    REQUIRE(normalizeAngle(-360.f) == 0);
+    REQUIRE(normalizeAngle(-450.f) == 270);
+
+    // Large magnitude
+    REQUIRE(normalizeAngle(1000.f) == 280);
+    REQUIRE(normalizeAngle(-1000.f) == 80);
+}

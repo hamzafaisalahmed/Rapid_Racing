@@ -81,6 +81,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_executable(unit_tests
     tests/test_utils.cpp      
     tests/test_waypointhandler.cpp
+    tests/test_collisions.cpp
     src/WaypointHandler.cpp
     src/AIController.cpp
     src/Car.cpp

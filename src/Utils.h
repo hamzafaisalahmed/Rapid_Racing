@@ -145,3 +145,9 @@ inline float computeTrackScaleFactor(sf::Vector2u trackSize)
     float thisDiagonal = std::sqrt((float)(trackSize.x * trackSize.x) + (float)(trackSize.y * trackSize.y));
     return thisDiagonal / refDiagonal;
 }
+
+inline int normalizeAngle(float angle)
+{
+    int rounded = int(std::round(angle));
+    return ((rounded % 360) + 360) % 360;
+}

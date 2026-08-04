@@ -63,16 +63,39 @@ void Game::resetLevel()
     totalLaps = maxLaps[(size_t)selectedLaps];
     totalRaceTime = 0.f;
 
-    const float y1 = track.getStartPosB1();
-    const float y2 = track.getStartPosB2();
-    const float baseX = track.getStartPosA();
+    // const float y1 = track.getStartPosB1();
+    // const float y2 = track.getStartPosB2();
+    // const float baseX = track.getStartPosA();
+    // const float rowSpacing = track.getStartRowSpacing();
+    const float posA = track.getStartPosA();
+    const float posB1 = track.getStartPosB1();
+    const float posB2 = track.getStartPosB2();
     const float rowSpacing = track.getStartRowSpacing();
+    const float startAngle = track.getStartAngle();
+    auto getGridPosition = [&](int slot) -> sf::Vector2f
+    {
+        float lane = (slot % 2 == 0) ? posB1 : posB2;
+        float rowOffset = (slot / 2) * rowSpacing;
+        int angle = normalizeAngle(startAngle);
+
+        switch (angle)
+        {
+        case 0:
+            return {lane, posA + rowOffset}; // Facing Up: A is Y, B is X
+        case 180:
+            return {lane, posA - rowOffset}; // Facing Down: A is Y, B is X
+        case 270:
+            return {posA + rowOffset, lane}; // Facing Left: A is X, B is Y
+        case 90:                             // Facing Right: A is X, B is Y
+        default:
+            return {posA - rowOffset, lane};
+        }
+    };
 
     if (selectedMode == Gamemode::PVP)
     {
-        // side by side, same x, no shuffle — order is fixed (player1/player2)
-        player1.setPosition(sf::Vector2f(baseX, y1));
-        player2.setPosition(sf::Vector2f(baseX, y2));
+        player1.setPosition(getGridPosition(0));
+        player2.setPosition(getGridPosition(1));
     }
     else
     {
@@ -98,13 +121,9 @@ void Game::resetLevel()
         static std::mt19937 gridRng(std::random_device{}());
         std::shuffle(gridCars.begin(), gridCars.end(), gridRng);
 
-        for (size_t slot = 0; slot < gridCars.size(); slot += 2)
+        for (size_t slot = 0; slot < gridCars.size(); ++slot)
         {
-            float xPos = baseX - (float)(slot / 2) * rowSpacing;
-
-            gridCars[slot]->setPosition(sf::Vector2f(xPos, y1));
-            if (slot + 1 < gridCars.size())
-                gridCars[slot + 1]->setPosition(sf::Vector2f(xPos, y2));
+            gridCars[slot]->setPosition(getGridPosition((int)slot));
         }
     }
 

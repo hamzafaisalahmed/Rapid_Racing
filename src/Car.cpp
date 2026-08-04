@@ -90,9 +90,9 @@ std::vector<sf::Vector2f> Car::getCorners(sf::Vector2f pos, float angle)
     } // for testing purposes, to test hitbox and collisions without loading the sprite
     // if load fails, exception is thrown, and if not loaded at all, you get an invisible hitbox
 
-    float w = (boundsWidth * baseSprite.getScale().x) / 2.6f;
-    float hr = (boundsHeight * baseSprite.getScale().y) * 0.3f;
-    float hf = (boundsHeight * baseSprite.getScale().y) * 0.6f;
+    float w = boundsWidth / 2.6f;
+    float hr = boundsHeight * 0.3f;
+    float hf = boundsHeight * 0.6f;
 
     return {
         t.transformPoint(-w, -hf),

@@ -12,6 +12,9 @@ public:
     CollisionHandler(Track &track, std::vector<Car *> &cars);
 
     bool handleCollision(Car *car, sf::Vector2f pos, float angle, sf::Vector2f oldPos, float oldAngle, float dt);
+    friend CarCollisionResult callCheckCarCollisions(const CollisionHandler &,
+                                                     Car *car1, Car *car2,
+                                                     sf::Vector2f pos, float angle);
 
 private:
     Track &track;

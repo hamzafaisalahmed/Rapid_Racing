@@ -130,5 +130,9 @@ public:
     float getID() const { return id; }
     void computeScaleFactor() { scaleFactor = computeTrackScaleFactor(getSize()); }
     float getScaleFactor() const { return scaleFactor; }
+
+    friend void setTrackTestImage(Track &, unsigned int, unsigned int, sf::Color);
+    friend void paintTrackRegion(Track &, sf::IntRect, sf::Color);
+
     ~Track() = default;
 };
