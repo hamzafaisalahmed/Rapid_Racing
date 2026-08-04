@@ -205,7 +205,7 @@ void WaypointHandler::computeBrakeZones(const std::vector<Waypoint> &waypoints, 
 {
     size_t n = waypoints.size();
     const float baseDistance = 60.f * scaleFactor;
-    const float angleScale = 4.f;
+    const float angleScale = 4.f * scaleFactor;
     const float minApexSpeedFrac = 0.35f;
 
     float sharpestPeak = 0.f;

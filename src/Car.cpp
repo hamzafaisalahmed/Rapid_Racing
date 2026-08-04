@@ -23,8 +23,10 @@ Car::Car(float xp, float yp, float a, float s, float ms, float mrs, float ac)
 
 void Car::load(const std::string &baseDir, const std::string &detailDir)
 {
-    baseTexture.loadFromFile(baseDir);
-    detailTexture.loadFromFile(detailDir);
+    if (!baseTexture.loadFromFile(baseDir))
+        throw std::runtime_error("Car::load failed to load base texture: " + baseDir);
+    if (!detailTexture.loadFromFile(detailDir))
+        throw std::runtime_error("Car::load failed to load detail texture: " + detailDir);
 
     baseSprite.setTexture(baseTexture);
     detailSprite.setTexture(detailTexture);
@@ -78,33 +80,30 @@ std::vector<sf::Vector2f> Car::getCorners(sf::Vector2f pos, float angle)
     t.rotate(angle);
 
     sf::FloatRect bounds = baseSprite.getLocalBounds();
-    float w = (bounds.width * baseSprite.getScale().x) / 2.6f;
-    float hr = (bounds.height * baseSprite.getScale().y) * 0.3f;
-    float hf = (bounds.height * baseSprite.getScale().y) * 0.6f;
+
+    float boundsWidth = bounds.width * baseSprite.getScale().x;
+    float boundsHeight = bounds.height * baseSprite.getScale().y;
+    if (boundsWidth <= 0.f || boundsHeight <= 0.f)
+    {
+        boundsWidth = 60.f;
+        boundsHeight = 100.f;
+    } // for testing purposes, to test hitbox and collisions without loading the sprite
+    // if load fails, exception is thrown, and if not loaded at all, you get an invisible hitbox
+
+    float w = (boundsWidth * baseSprite.getScale().x) / 2.6f;
+    float hr = (boundsHeight * baseSprite.getScale().y) * 0.3f;
+    float hf = (boundsHeight * baseSprite.getScale().y) * 0.6f;
 
     return {
         t.transformPoint(-w, -hf),
         t.transformPoint(w, -hf),
-        t.transformPoint(-w, hr),
-        t.transformPoint(w, hr)};
+        t.transformPoint(w, hr),
+        t.transformPoint(-w, hr)};
 }
 
 std::vector<sf::Vector2f> Car::getCorners()
 {
-    sf::Transform t;
-    t.translate(position);
-    t.rotate(angle);
-
-    sf::FloatRect bounds = baseSprite.getLocalBounds();
-    float w = (bounds.width * baseSprite.getScale().x) / 2.6f;
-    float hf = (bounds.height * baseSprite.getScale().y) * 0.3f;
-    float hr = (bounds.height * baseSprite.getScale().y) * 0.6f;
-
-    return {
-        t.transformPoint(-w, hf),
-        t.transformPoint(w, hf),
-        t.transformPoint(-w, -hr),
-        t.transformPoint(w, -hr)};
+    return Car::getCorners(position, angle);
 }
 
 void Car::accelerate(float dt)

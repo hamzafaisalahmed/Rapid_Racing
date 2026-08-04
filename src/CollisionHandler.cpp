@@ -45,8 +45,8 @@ int CollisionHandler::checkWallCollisions(Car *car, sf::Vector2f pos, float angl
 
     bool frontHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[1]);
     bool rearHit = !track.isOnRoad(corners[2]) && !track.isOnRoad(corners[3]);
-    bool leftHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[2]);
-    bool rightHit = !track.isOnRoad(corners[1]) && !track.isOnRoad(corners[3]);
+    bool leftHit = !track.isOnRoad(corners[0]) && !track.isOnRoad(corners[3]);  // Updated (was 0, 2)
+    bool rightHit = !track.isOnRoad(corners[1]) && !track.isOnRoad(corners[2]); // Updated (was 1, 3)
 
     if (frontHit)
         return 4;
@@ -75,21 +75,21 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
     float spinDirection = 0.f;
     sf::Vector2f pushDir = car->getPerpendicularVector();
 
-    if (index == 3)
+    if (index == 2) // Rear-Right (was index 3)
     {
         spinDirection = rightSpin;
         pushDir *= -1.f;
     }
-    else if (index == 2)
+    else if (index == 3) // Rear-Left (was index 2)
     {
         spinDirection = leftSpin;
     }
-    else if (index == 1)
+    else if (index == 1) // Front-Right
     {
         spinDirection = leftSpin;
         pushDir *= -1.f;
     }
-    else if (index == 0)
+    else if (index == 0) // Front-Left
     {
         spinDirection = rightSpin;
     }
@@ -240,10 +240,10 @@ CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf
     auto corners2 = car2->getCorners();
 
     sf::Vector2f axes[4];
-    axes[0] = corners1[1] - corners1[0];
-    axes[1] = corners1[2] - corners1[0];
-    axes[2] = corners2[1] - corners2[0];
-    axes[3] = corners2[2] - corners2[0];
+    axes[0] = corners1[1] - corners1[0]; // Front edge vector
+    axes[1] = corners1[3] - corners1[0]; // Left edge vector (Updated: was corners1[2])
+    axes[2] = corners2[1] - corners2[0]; // Front edge vector
+    axes[3] = corners2[3] - corners2[0]; // Left edge vector (Updated: was corners2[2])
 
     float minOverlap = std::numeric_limits<float>::max();
     sf::Vector2f translationAxis;
@@ -287,7 +287,10 @@ CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf
     // contact point / index, purely for the impulse — unchanged from before
     int hitCornerIndex = 0;
     float closestDist = std::numeric_limits<float>::max();
-    std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
+
+    // Updated edge pairings: {FL, FR}, {RR, RL}, {FL, RL}, {FR, RR}
+    std::vector<std::pair<int, int>> edges = {{0, 1}, {2, 3}, {0, 3}, {1, 2}};
+
     for (int i = 0; i < 4; i++)
     {
         for (auto &edge : edges)
@@ -298,13 +301,13 @@ CarCollisionResult CollisionHandler::checkCarCollisions(Car *car1, Car *car2, sf
                 closestDist = dist;
                 hitCornerIndex = i;
                 if (edge == std::pair<int, int>{0, 1})
-                    result.car2Index = 4;
+                    result.car2Index = 4; // Front
                 else if (edge == std::pair<int, int>{2, 3})
-                    result.car2Index = 5;
-                else if (edge == std::pair<int, int>{0, 2})
-                    result.car2Index = 6;
-                else if (edge == std::pair<int, int>{1, 3})
-                    result.car2Index = 7;
+                    result.car2Index = 5; // Rear
+                else if (edge == std::pair<int, int>{0, 3})
+                    result.car2Index = 6; // Left (Updated: was {0, 2})
+                else if (edge == std::pair<int, int>{1, 2})
+                    result.car2Index = 7; // Right (Updated: was {1, 3})
             }
         }
     }
