@@ -47,7 +47,7 @@ public:
         {
             std::vector<LapTime> times;
             std::ifstream file;
-            if (loadFile(file, "scores.txt"))
+            if (loadFile(file, "scores.txt", 5, 10))
             {
                 bool warned = false;
                 LapTime lt;
