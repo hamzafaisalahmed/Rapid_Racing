@@ -1,9 +1,10 @@
 #pragma once
+#define WIN32_LEAN_AND_MEAN
 #include "Utils.h"
 #include <fstream>
 #include <vector>
 #include <windows.h>
-#define WIN32_LEAN_AND_MEAN
+#include <algorithm>
 
 class Leaderboard
 {
@@ -19,9 +20,9 @@ public:
             std::sort(sortedTimes.begin(), sortedTimes.end(),
                       [](const LapTime &a, const LapTime &b)
                       { return a.bestLap < b.bestLap; });
-            // Optional: Keep only top 10
-            if (sortedTimes.size() > 10)
-                sortedTimes.resize(10);
+            // Keep only top 50 to save space
+            if (sortedTimes.size() > 50)
+                sortedTimes.resize(50);
 
             // 4. Overwrite file
             std::ofstream file("scores.txt", std::ios::trunc); // Use trunc to overwrite
@@ -36,7 +37,7 @@ public:
         }
         catch (...)
         {
-            throw std::runtime_error("Error in writing to scores file\n");
+            MessageBoxA(nullptr, "Could not write to scores.txt", "Rapid Racing - Save Error", MB_OK | MB_ICONWARNING);
         }
     }
 

@@ -123,7 +123,7 @@ impactCarryover CollisionHandler::handleCollisionResponse(int index, Car *car, s
 
     returnValue.dir = car->getDirectionVector();
     returnValue.speed = speed;
-    float av = impact * spinDirection;
+    float av = impact * spinDirection * angularDamping;
     returnValue.angularVelocity = av;
     float afterSpin = av * dt;
     if (checkWallCollisions(car, oldPos + returnValue.pos, car->getAngle() + afterSpin) != -1)

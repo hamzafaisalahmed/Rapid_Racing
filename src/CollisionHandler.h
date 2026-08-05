@@ -34,8 +34,7 @@ private:
     float headCollisionDamping = -0.7f;
     float impactScale = 1.1f;
     float wallPushMultiplier = 2.f;
-    float tunnelingChecks = 5;
-
+    float angularDamping = 0.65f;
     float baseRestitution = 0.35f;
     float torqueTurnFactor = 0.2f;
     float minThreshold = 0.0001f;

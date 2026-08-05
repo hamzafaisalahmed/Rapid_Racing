@@ -518,7 +518,15 @@ void AIController::update(const std::vector<Car *> &cars, float dt)
     }
 
     updateState(cars, dt);
-    updateSteering();
+    if (reactionDelay > 0.f)
+    {
+        reactionDelay -= dt;
+    }
+    else
+    {
+        reactionDelay = baseReactionDelay;
+        updateSteering();
+    }
     updateSpeed();
     if (state == AIState::Passing && verticalInput == carInput::Up)
         car->setAcc(baseAcc * passBoostMul);

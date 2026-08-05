@@ -33,6 +33,7 @@ public:
         targetedByTimeout = 0.5f;
     }
     float getAggro() const { return aggro; }
+    void setReactionDelay(float delay) { baseReactionDelay = delay; }
 
 private:
     float laneBlockedTime = 0.f;
@@ -118,4 +119,8 @@ private:
     float defenseFatigueThreshold = 4.f; // aggro-scaled
     const float defenseFatigueDecay = 2.f;
     float scaleFactor = 1.f; // track scale factor, set at reset
+
+    // ── reaction delay (difficulty-driven, set externally) ──────
+    float reactionDelay = 0.f;     // counts down each tick; steering only updates when it hits 0
+    float baseReactionDelay = 0.f; // reset value, set via setReactionDelay()
 };

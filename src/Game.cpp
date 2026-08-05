@@ -26,6 +26,8 @@ void Game::resetLevel()
     raceLeaderboard.clear();
     const CarPreset &selected = carPresets[(size_t)selectedCarLvl];
 
+    float difficultyDelay[3] = {0.02f, 0.005f, 0.f}; // Easy, Medium, Hard
+
     float diffMultiplier = 1.f;
     if (selectedDifficulty == 0) // Easy
         diffMultiplier = 0.9f;
@@ -57,7 +59,10 @@ void Game::resetLevel()
         {
             AI *aiCar = static_cast<AI *>(car);
             if (aiCar->aiController)
+            {
                 aiCar->aiController->reset(track.getScaleFactor());
+                aiCar->aiController->setReactionDelay(difficultyDelay[selectedDifficulty]);
+            }
         }
     }
     totalLaps = maxLaps[(size_t)selectedLaps];
@@ -219,7 +224,7 @@ void Game::init()
     homeAudio.setLoop(true);
     homeAudio.setVolume(70.f);
 
-    selectedCarLvl = 2;
+    selectedCarLvl = 1;
     selectedLaps = 0;
 
     trackPaths = {
@@ -767,10 +772,7 @@ void Game::checkWinner(Car *car)
 
             if (!car->isAI())
             {
-                if (bestLapHolder && !bestLapHolder->isAI())
-                    leaderboardManager.saveLapTime(bestLapHolder->getLapData());
-                else
-                    leaderboardManager.saveLapTime(car->getLapData());
+                leaderboardManager.saveLapTime(car->getLapData());
             }
 
             if (stateManager->getCurrentState() != GameState::Playing)

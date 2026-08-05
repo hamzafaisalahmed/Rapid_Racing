@@ -277,22 +277,27 @@ void Graphics::renderLevelComplete(const LapTime &lapData, const std::vector<Lap
     // 3. Header
     drawTextCentered("TIME TRIAL COMPLETE!", 600.f, 240.f, 35, sf::Color::White);
     int trackId = track.getID();
+
     // 4. Global Top 3 Loop
-    for (size_t i = 0; i < std::min<size_t>(3, allTimes.size()); ++i)
+    int displayCount = 0;
+    for (size_t i = 0; i < allTimes.size() && displayCount < 3; ++i)
     {
         if (allTimes[i].trackID != trackId)
             continue;
-        std::string label = (i == 0) ? "1ST: " : (i == 1) ? "2ND: "
-                                                          : "3RD: ";
+
+        std::string label = (displayCount == 0) ? "1ST: " : (displayCount == 1) ? "2ND: "
+                                                                                : "3RD: ";
 
         sf::Color textColor = sf::Color(200, 200, 200); // Default Silver
-        if (i == 0)
+        if (displayCount == 0)
             textColor = sf::Color(255, 215, 0); // Gold
-        else if (i == 2)
+        else if (displayCount == 2)
             textColor = sf::Color(205, 127, 50); // Bronze
 
         std::string rowText = label + allTimes[i].title + " - " + formatRaceTime(allTimes[i].bestLap);
-        drawTextCentered(rowText, 600.f, 290.f + (i * 35.f), 24, textColor);
+        drawTextCentered(rowText, 600.f, 290.f + (displayCount * 35.f), 24, textColor);
+
+        displayCount++;
     }
 
     if (lapData.bestLap != BESTLAP_INIT_VAL)
