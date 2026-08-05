@@ -23,9 +23,9 @@ Car::Car(float xp, float yp, float a, float s, float ms, float mrs, float ac)
 
 void Car::load(const std::string &baseDir, const std::string &detailDir)
 {
-    if (!baseTexture.loadFromFile(baseDir))
+    if (!loadAsset(baseTexture, baseDir))
         throw std::runtime_error("Car::load failed to load base texture: " + baseDir);
-    if (!detailTexture.loadFromFile(detailDir))
+    if (!loadAsset(detailTexture, detailDir))
         throw std::runtime_error("Car::load failed to load detail texture: " + detailDir);
 
     baseSprite.setTexture(baseTexture);

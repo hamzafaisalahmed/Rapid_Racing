@@ -1,15 +1,15 @@
 #include "Graphics.h"
 #include "TrackLoader.h"
-
+#include "Utils.h"
 void Graphics::init()
 {
-    if (!homeTexture.loadFromFile("assets/textures/homescreen.png"))
+    if (!loadAsset(homeTexture, "assets/textures/homescreen.png"))
         throw std::runtime_error("Home background texture not found");
     homeBackground.setTexture(homeTexture);
     //=====================================================================================
-    if (!font.loadFromFile("assets/fonts/ProFontWindows.ttf"))
+    if (!loadAsset(font, "assets/fonts/ProFontWindows.ttf"))
         throw std::runtime_error("Font not found");
-    if (!pauseTexture.loadFromFile("assets/textures/pause.png"))
+    if (!loadAsset(pauseTexture, "assets/textures/pause.png"))
         throw std::runtime_error("Pause texture not found");
     pause.setTexture(pauseTexture);
     //=====================================================================================
@@ -1139,7 +1139,7 @@ void Graphics::renderAISetupScreen(int currentAiCount, bool isSpectator, int cur
 
 void Graphics::loadMinimap()
 {
-    if (!minimapTexture.loadFromFile(track.getMinimapImagePath()))
+    if (!loadAsset(minimapTexture, track.getMinimapImagePath()))
         throw std::runtime_error("Minimap texture not found");
 
     minimapSprite.setTexture(minimapTexture, true);
@@ -1195,7 +1195,7 @@ void Graphics::initTrackSelect(const std::vector<std::string> &imagePaths)
 
         trackSelectButtons.push_back(sf::FloatRect(bx, by, cardWidth, cardHeight));
 
-        if (trackTextures[i].loadFromFile(imagePaths[i]))
+        if (loadAsset(trackTextures[i], imagePaths[i]))
         {
             sf::Sprite sprite(trackTextures[i]);
 

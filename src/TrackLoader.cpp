@@ -4,8 +4,8 @@ using json = nlohmann::json;
 
 void trackLoader(Track &track, const std::string &jsonFilePath)
 {
-    std::ifstream file(jsonFilePath);
-    if (!file.is_open())
+    std::ifstream file;
+    if (!loadFile(file, jsonFilePath))
         throw std::runtime_error("Could not open file from path: " + jsonFilePath);
 
     json j;
@@ -63,8 +63,8 @@ void trackLoader(Track &track, const std::string &jsonFilePath)
 
 std::string getTrackMinimapPath(const std::string &jsonFilePath)
 {
-    std::ifstream file(jsonFilePath);
-    if (!file.is_open())
+    std::ifstream file;
+    if (!loadFile(file, jsonFilePath))
         throw std::runtime_error("Could not open file from path: " + jsonFilePath);
 
     json j;

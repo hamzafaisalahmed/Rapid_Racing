@@ -1,7 +1,51 @@
 #pragma once
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <cmath>
+#include <thread>
+#include <chrono>
+#include <fstream>
+
+const int MAX_ATTEMPTS = 100;
+const int DELAY_MS = 300; // Delay in milliseconds between attempts
+// Retries a loader function up to maxAttempts times with a short delay between,
+// useful for transient first-launch file locks (e.g. antivirus scanning a fresh exe).
+template <typename T>
+inline bool loadAsset(T &resource, const std::string &path, int maxAttempts = MAX_ATTEMPTS, int delayMs = DELAY_MS)
+{
+    for (int attempt = 0; attempt < maxAttempts; ++attempt)
+    {
+        if (resource.loadFromFile(path))
+            return true;
+        if (attempt < maxAttempts - 1)
+            std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+    }
+    return false;
+}
+inline bool loadMusic(sf::Music &music, const std::string &path, int maxAttempts = MAX_ATTEMPTS, int delayMs = DELAY_MS)
+{
+    for (int attempt = 0; attempt < maxAttempts; ++attempt)
+    {
+        if (music.openFromFile(path))
+            return true;
+        if (attempt < maxAttempts - 1)
+            std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+    }
+    return false;
+}
+inline bool loadFile(std::ifstream &file, const std::string &path, int maxAttempts = MAX_ATTEMPTS, int delayMs = DELAY_MS)
+{
+    for (int attempt = 0; attempt < maxAttempts; ++attempt)
+    {
+        file.open(path);
+        if (file.is_open())
+            return true;
+        if (attempt < maxAttempts - 1)
+            std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+    }
+    return false;
+}
 
 const float BESTLAP_INIT_VAL = 999999;
 inline float lerp(float a, float b, float t) { return a + (b - a) * t; }

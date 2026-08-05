@@ -36,7 +36,7 @@ public:
     {
         try
         {
-            if (!trackTexture.loadFromFile(dir))
+            if (!loadAsset(trackTexture, dir))
             {
                 throw std::runtime_error("Texture not found");
             }

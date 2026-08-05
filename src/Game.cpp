@@ -200,21 +200,21 @@ void Game::init()
         cars.push_back(newAi);
     }
 
-    if (!engineAudio.openFromFile("assets/audio/engine.ogg"))
+    if (!loadMusic(engineAudio, "assets/audio/engine.ogg"))
         throw std::runtime_error("Engine sound not found\n");
     engineAudio.setLoop(true);
 
-    if (!ambientEngineAudio.openFromFile("assets/audio/engine.ogg"))
+    if (!loadMusic(ambientEngineAudio, "assets/audio/engine.ogg"))
         throw std::runtime_error("Ambient engine sound not found\n");
     ambientEngineAudio.setLoop(true);
     ambientEngineAudio.setVolume(0.f);
 
-    if (!endscreen.openFromFile("assets/audio/endscreen.ogg"))
+    if (!loadMusic(endscreen, "assets/audio/endscreen.ogg"))
         throw std::runtime_error("Endscreen music file not found\n");
     endscreen.setLoop(true);
     endscreen.setVolume(70.f);
 
-    if (!homeAudio.openFromFile("assets/audio/homescreen.ogg"))
+    if (!loadMusic(homeAudio, "assets/audio/homescreen.ogg"))
         throw std::runtime_error("Homescreen music not found");
     homeAudio.setLoop(true);
     homeAudio.setVolume(70.f);
